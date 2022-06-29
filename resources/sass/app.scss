@@ -1,0 +1,14 @@
+// Fonts
+@import url('https://fonts.googleapis.com/css?family=Nunito');
+
+// Variables
+@import 'variables';
+
+// Define variable defaults
+$body-bg: #ffff;
+$body-color: #111;
+//// Bootstrap
+@import '~bootstrap/scss/bootstrap.scss';
+//@import '~bootstrap-vue/src/index.scss';
+
+
