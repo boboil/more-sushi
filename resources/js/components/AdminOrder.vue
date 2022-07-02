@@ -14,10 +14,10 @@
                 <div class="row">
                     <div class="col-12">
                         <select class="form-select" required v-model="item.id" name="selected[][title]">
-                            <option selected>Выберете ролл</option>
+                            <option value="" disabled selected hidden >Выберете ролл</option>
                             <option v-for="option in options" :value="option.value">{{ option.text }}</option>
                         </select>
-                        <input type="number" v-model="item.quantity" name="selected[][quantity]" class="form-control"
+                        <input type="number" step="1"  v-model="item.quantity" name="selected[][quantity]" class="form-control"
                                aria-label="Text input with dropdown button"
                                placeholder="колличество" required>
                     </div>
@@ -86,7 +86,7 @@ export default {
             loading: false,
             selected: [{
                 id: '',
-                quantity: 0
+                quantity: ''
             }],
             options: [],
             address: '',
