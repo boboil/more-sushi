@@ -15,7 +15,7 @@
                     </thead>
                     <tbody>
                     <tr v-for="(order,key) in orders">
-                        <th scope="row">{{ key }}</th>
+                        <th scope="row">{{ key + 1 }}</th>
                         <td>{{ order.address }}</td>
                         <td>
                 <span v-for="product in order.products.data">
@@ -43,8 +43,8 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr v-for="product in products">
-                        <th scope="row">{{ product.id }}</th>
+                    <tr v-for="(product, key) in products">
+                        <th scope="row">{{ key + 1 }}</th>
                         <td>{{ product.title }}</td>
                         <td>{{ product.quantity }}</td>
                     </tr>

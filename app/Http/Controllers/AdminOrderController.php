@@ -8,6 +8,8 @@ use App\Http\Resources\ProductResource;
 use App\Models\AdminOrder;
 use App\Models\Product;
 use Carbon\Carbon;
+use Illuminate\Http\Response;
+use JetBrains\PhpStorm\NoReturn;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -49,6 +51,21 @@ class AdminOrderController extends Controller
         $order->products()->attach($sync_data);
 
         return true;
+    }
+
+    /**
+     * @param Request $request
+     *
+     * @return Response
+     * @throws \Exception
+     */
+    public function removeOrder($orderId)
+    {
+        $adminOrder = AdminOrder::find($orderId);
+        $adminOrder->products()->detach();
+        if ($adminOrder->delete()) {
+            return new Response(null, Response::HTTP_OK);
+        }
     }
 
     /**

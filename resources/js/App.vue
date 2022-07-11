@@ -7,6 +7,8 @@
                     <b-nav-item to="/" exact exact-active-class="active">Заказ</b-nav-item>
                     <b-nav-item to="/today-orders" exact exact-active-class="active">Текущие  заказы</b-nav-item>
                     <b-nav-item to="/yesterday-orders" exact exact-active-class="active">Заказы к выдаче</b-nav-item>
+                    <router-link to="/login" class="nav-item nav-link">login</router-link>
+<!--                    <router-link to="/register" class="nav-item nav-link">Register</router-link>-->
                 </b-nav>
             </b-card-header>
 
@@ -22,5 +24,36 @@
 </template>
 
 <script>
-export default {}
+export default {
+    name: "App",
+    data() {
+        return {
+            isLoggedIn: false,
+        }
+    },
+    created() {
+        if (window.Laravel.isLoggedin) {
+            this.isLoggedIn = true
+        }
+    },
+    methods: {
+        logout(e) {
+            console.log('ss')
+            e.preventDefault()
+            this.$axios.get('/sanctum/csrf-cookie').then(response => {
+                this.$axios.post('/api/logout')
+                    .then(response => {
+                        if (response.data.success) {
+                            window.location.href = "/"
+                        } else {
+                            console.log(response)
+                        }
+                    })
+                    .catch(function (error) {
+                        console.error(error);
+                    });
+            })
+        }
+    },
+}
 </script>

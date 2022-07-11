@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminOrderController;
+use \App\Http\Controllers\Api\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,7 +15,8 @@ use App\Http\Controllers\AdminOrderController;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
-
+Route::post('login', [UserController::class, 'login']);
+Route::post('register', [UserController::class, 'register']);
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
@@ -25,4 +27,6 @@ Route::get('today-admin-products', [AdminOrderController::class, 'getAdminOrders
 Route::get('yesterday-admin-orders', [AdminOrderController::class, 'indexAdminYesterdayOrders']);
 Route::get('yesterday-admin-products', [AdminOrderController::class, 'indexAdminYesterdayProducts']);
 Route::post('admin-create-order', [AdminOrderController::class, 'addOrder']);
+Route::delete('admin-remove-order/{order_id}', [AdminOrderController::class, 'removeOrder']);
+//Route::resource('admin-order', AdminOrderController::class, ['except' => ['create', 'edit', 'show'], 'as' => 'api']);
 
