@@ -8,6 +8,8 @@ use App\Http\Resources\ProductResource;
 use App\Models\AdminOrder;
 use App\Models\Product;
 use Carbon\Carbon;
+use Illuminate\Http\Response;
+use JetBrains\PhpStorm\NoReturn;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -18,7 +20,7 @@ class AdminOrderController extends Controller
      *
      * @return ProductCollection
      */
-    public function index(Request $request)
+    public function index(Request $request): ProductCollection
     {
         $products = Product::all();
 
@@ -27,8 +29,10 @@ class AdminOrderController extends Controller
 
     /**
      * @param Request $request
+     *
+     * @return bool
      */
-    public function addOrder(Request $request)
+    public function addOrder(Request $request): bool
     {
         $rolls = $request->input('selected');
         $date = Carbon::now();
@@ -52,14 +56,40 @@ class AdminOrderController extends Controller
     /**
      * @param Request $request
      *
+     * @return Response
+     * @throws \Exception
+     */
+    public function removeOrder($orderId)
+    {
+        $adminOrder = AdminOrder::find($orderId);
+        $adminOrder->products()->detach();
+        if ($adminOrder->delete()) {
+            return new Response(null, Response::HTTP_OK);
+        }
+    }
+
+    /**
+     * @param Request $request
+     *
      * @return OrderCollection
      * */
-    public function indexAdminOrders(Request $request)
+    public function indexAdminOrders(Request $request): OrderCollection
     {
         $orders = AdminOrder::getTodayOrders();
 
         return new OrderCollection($orders);
+    }
 
+    /**
+     * @param Request $request
+     *
+     * @return OrderCollection
+     * */
+    public function indexAdminYesterdayOrders(Request $request): OrderCollection
+    {
+        $orders = AdminOrder::getYesterdayOrders();
+
+        return new OrderCollection($orders);
     }
 
     /**
@@ -67,9 +97,39 @@ class AdminOrderController extends Controller
      *
      * @return JsonResponse
      * */
-    public function getAdminOrdersProducts(Request $request)
+    public function getAdminOrdersProducts(Request $request): JsonResponse
     {
         $orders = AdminOrder::getTodayOrders();
+        $rolls = [];
+
+        foreach ($orders as $order) {
+            foreach ($order->products as $product) {
+                $key = array_key_exists($product->id, $rolls);
+                if ($key) {
+                    $rolls[$product->id]['quantity'] += (int)$product->pivot->quantity;
+                } else {
+                    $rolls[$product->id] = [
+                        'id' => $product->id,
+                        'title' => $product->title,
+                        'quantity' => (int)$product->pivot->quantity
+                    ];
+                }
+
+            }
+        }
+        return new JsonResponse([
+            'data' => $rolls
+        ]);
+    }
+
+    /**
+     * @param Request $request
+     *
+     * @return JsonResponse
+     * */
+    public function indexAdminYesterdayProducts(Request $request): JsonResponse
+    {
+        $orders = AdminOrder::getYesterdayOrders();
         $rolls = [];
 
         foreach ($orders as $order) {

@@ -1,3 +1,5 @@
+import YesterdayOrders from "./components/YesterdayOrders";
+
 require("./bootstrap")
 
 import Vue from 'vue';
@@ -22,6 +24,8 @@ import App from './App.vue';
 
 import AdminOrder from './components/AdminOrder.vue';
 import TodayOrders from './components/TodayOrders.vue';
+import Register from './auth/Register.vue';
+import Login from './auth/Login.vue';
 
 
 const routes = [
@@ -35,8 +39,23 @@ const routes = [
         path: '/today-orders',
         component: TodayOrders
     },
+    {
+        name: 'yesterdayOrders',
+        path: '/yesterday-orders',
+        component: YesterdayOrders
+    },
+    // {
+    //     name: 'register',
+    //     path: '/register',
+    //     component: Register
+    // },
+    {
+        name: 'login',
+        path: '/login',
+        component: Login
+    },
 
 ];
-
+Vue.prototype.$axios = axios
 const router = new VueRouter({ mode: 'history', routes: routes});
 new Vue(Vue.util.extend({ router }, App)).$mount('#app');

@@ -11,11 +11,12 @@
                         <th scope="col">Заказ</th>
                         <th scope="col">Бонус</th>
                         <th scope="col">Дата</th>
+                        <th scope="col" v-if="auth">Удалить</th>
                     </tr>
                     </thead>
                     <tbody>
-                    <tr v-for="order in orders">
-                        <th scope="row">{{ order.id }}</th>
+                    <tr v-for="(order, key) in orders">
+                        <th scope="row">{{ key + 1 }}</th>
                         <td>{{ order.address }}</td>
                         <td>
                 <span v-for="product in order.products.data">
@@ -24,6 +25,9 @@
                         </td>
                         <td>{{ order.sum_product >= 10 ? '2 шт' : '-' }}</td>
                         <td>{{ order.order_time }}</td>
+                        <td v-if="auth">
+                            <button type="button" class="btn btn-danger" @click="deleteOrder(order)">Удалить</button>
+                        </td>
                     </tr>
                     </tbody>
                 </table>
@@ -33,7 +37,7 @@
 
         <div class="row">
             <div class="col-12">
-               <h2>Детально по ролам</h2>
+                <h2>Детально по ролам</h2>
                 <table class="table">
                     <thead>
                     <tr>
@@ -75,6 +79,7 @@ export default {
             orders: [],
             loading: false,
             products: [],
+            auth: false,
         }
     },
     computed: {
@@ -90,7 +95,7 @@ export default {
             let bonus = 0
             this.orders.forEach(order => {
                 sum += order.sum_product
-                if(order.sum_product >= 10)
+                if (order.sum_product >= 10)
                     bonus += 2
 
             })
@@ -113,13 +118,30 @@ export default {
             return axios.get('/api/today-admin-products')
                 .then((response) => {
                     this.products = response.data.data
-                    console.log(this.products)
                 })
-        }
+        },
+        deleteOrder(order) {
+            if (confirm('Are you sure?')) {
+                this.$axios.get('/sanctum/csrf-cookie').then(response => {
+                    console.log(response)
+                    axios
+                        .delete('/api/admin-remove-order/' + order.id, {
+                                headers: response.config.headers,
+                            }
+                        ).then(response => {
+                        this.getOrders()
+                        this.getProducts()
+                    })
+                })
+            }
+        },
     },
     mounted() {
         this.getOrders()
         this.getProducts()
+        if (window.Laravel.isLoggedin) {
+            this.auth = true
+        }
     }
 }
 </script>

@@ -29,4 +29,9 @@ class AdminOrder extends Model
         $sql = self::where('created_at', '>=', Carbon::today());
         return $sql->get();
     }
+    public static function getYesterdayOrders()
+    {
+        $sql = self::where('created_at', '>=', Carbon::yesterday())->where('created_at', '<', Carbon::today());
+        return $sql->get();
+    }
 }

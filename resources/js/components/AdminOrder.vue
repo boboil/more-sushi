@@ -105,7 +105,7 @@ export default {
                 })
         },
         addNewSelected() {
-            this.selected.push({id: '', quantity: 0})
+            this.selected.push({id: '', quantity: ''})
         },
         removeSelected(index) {
             this.selected.splice(index, 1);
