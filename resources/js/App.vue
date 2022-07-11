@@ -5,7 +5,8 @@
                 <b-nav card-header tabs>
                     <!-- <b-nav-item>'s with child routes. Note the trailing slash on the first <b-nav-item> -->
                     <b-nav-item to="/" exact exact-active-class="active">Заказ</b-nav-item>
-                    <b-nav-item to="/today-orders" exact exact-active-class="active">Сегодняшние заказы</b-nav-item>
+                    <b-nav-item to="/today-orders" exact exact-active-class="active">Текущие  заказы</b-nav-item>
+                    <b-nav-item to="/yesterday-orders" exact exact-active-class="active">Заказы к выдаче</b-nav-item>
                 </b-nav>
             </b-card-header>
 

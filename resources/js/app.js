@@ -1,3 +1,5 @@
+import YesterdayOrders from "./components/YesterdayOrders";
+
 require("./bootstrap")
 
 import Vue from 'vue';
@@ -34,6 +36,11 @@ const routes = [
         name: 'today-orders',
         path: '/today-orders',
         component: TodayOrders
+    },
+    {
+        name: 'yesterdayOrders',
+        path: '/yesterday-orders',
+        component: YesterdayOrders
     },
 
 ];

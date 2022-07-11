@@ -22,5 +22,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::get('admin-order', [AdminOrderController::class, 'index']);
 Route::get('today-admin-orders', [AdminOrderController::class, 'indexAdminOrders']);
 Route::get('today-admin-products', [AdminOrderController::class, 'getAdminOrdersProducts']);
+Route::get('yesterday-admin-orders', [AdminOrderController::class, 'indexAdminYesterdayOrders']);
+Route::get('yesterday-admin-products', [AdminOrderController::class, 'indexAdminYesterdayProducts']);
 Route::post('admin-create-order', [AdminOrderController::class, 'addOrder']);
 
