@@ -27,6 +27,8 @@ Route::get('today-admin-products', [AdminOrderController::class, 'getAdminOrders
 Route::get('yesterday-admin-orders', [AdminOrderController::class, 'indexAdminYesterdayOrders']);
 Route::get('yesterday-admin-products', [AdminOrderController::class, 'indexAdminYesterdayProducts']);
 Route::post('admin-create-order', [AdminOrderController::class, 'addOrder']);
+Route::post('admin-create-product', [AdminOrderController::class, 'addProduct']);
 Route::delete('admin-remove-order/{order_id}', [AdminOrderController::class, 'removeOrder']);
-//Route::resource('admin-order', AdminOrderController::class, ['except' => ['create', 'edit', 'show'], 'as' => 'api']);
+Route::delete('admin-remove-product/{product_id}', [AdminOrderController::class, 'removeProduct']);
+Route::get('products', [AdminOrderController::class, 'getProducts']);
 

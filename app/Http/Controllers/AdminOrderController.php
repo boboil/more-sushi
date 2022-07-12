@@ -22,7 +22,7 @@ class AdminOrderController extends Controller
      */
     public function index(Request $request): ProductCollection
     {
-        $products = Product::all();
+        $products = Product::getProducts();
 
         return new ProductCollection($products);
     }
@@ -150,5 +150,45 @@ class AdminOrderController extends Controller
         return new JsonResponse([
             'data' => $rolls
         ]);
+    }
+
+    /**
+     * @param Request $request
+     * @return ProductCollection
+     */
+    public function getProducts(Request $request): ProductCollection
+    {
+        $products = Product::getProducts();
+
+        return new ProductCollection($products);
+    }
+    /**
+     * @param Request $request
+     *
+     * @return bool
+     */
+    public function addProduct(Request $request)
+    {
+        $product = new Product();
+        $product->title = $request->input('title');
+        $product->price = 0;
+        $product->save();
+
+        return true;
+    }
+
+    /**
+     * @param $productId
+     *
+     * @return Response
+     * @throws \Exception
+     */
+    public function removeProduct($productId)
+    {
+        $product = Product::find($productId);
+        $product->orders()->detach();
+        if ($product->delete()) {
+            return new Response(null, Response::HTTP_OK);
+        }
     }
 }
