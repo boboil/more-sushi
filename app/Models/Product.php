@@ -23,4 +23,12 @@ class Product extends Model
     {
         return $this->belongsToMany(AdminOrder::class);
     }
+
+    /**
+     * @return Product
+     */
+    public static function getProducts()
+    {
+        return self::all();
+    }
 }

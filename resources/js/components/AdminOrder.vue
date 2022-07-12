@@ -131,7 +131,6 @@ export default {
                 })
         },
         showModal() {
-            // this.$refs['successModal'].show()
             Swal.fire({
                 icon: 'success',
                 title: 'Спасибо',
