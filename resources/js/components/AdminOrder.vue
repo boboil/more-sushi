@@ -1,6 +1,12 @@
 <template>
     <main class="container">
         <form id="app" class="order-form">
+            <div v-if="errors.length">
+                <b>Пожалуйста исправьте:</b>
+            <ul>
+                <li v-for="error in errors">{{ error }}</li>
+            </ul>
+            </div>
             <div class="input-group m-3 roll col-sm-10" v-for="(item, index) in selected">
                 <div class="row">
                     <div class="col-xs-2">
@@ -85,11 +91,12 @@ export default {
             products: [],
             loading: false,
             selected: [{
-                id: '',
-                quantity: ''
+                id: null,
+                quantity: null
             }],
             options: [],
-            address: '',
+            address: null,
+            errors: [],
         }
     },
     methods: {
@@ -105,14 +112,31 @@ export default {
                 })
         },
         addNewSelected() {
-            this.selected.push({id: '', quantity: ''})
+            this.selected.push({id: null, quantity: null})
         },
         removeSelected(index) {
             this.selected.splice(index, 1);
         },
         sendData(event) {
+            this.errors = [];
             if (event) {
                 event.preventDefault()
+            }
+            this.selected.forEach(item => {
+                if (!item.quantity || !item.id) {
+                    this.errors.push('Заполните все поля формы');
+                }
+            })
+            if (!this.address){
+                this.errors.push('Заполните все поля формы');
+            }
+            console.log(
+                'select', this.selected,
+                'erorr', this.errors
+            )
+            if (this.errors.length > 0) {
+                console.log('break')
+                return true;
             }
             let data = {
                 selected: this.selected,
