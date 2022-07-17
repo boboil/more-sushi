@@ -33,7 +33,7 @@
 
         <div class="row">
             <div class="col-12">
-               <h2>Детально по ролам</h2>
+                <h2>Детально по ролам</h2>
                 <table class="table">
                     <thead>
                     <tr>
@@ -90,7 +90,7 @@ export default {
             let bonus = 0
             this.orders.forEach(order => {
                 sum += order.sum_product
-                if(order.sum_product >= 10)
+                if (order.sum_product >= 10)
                     bonus += 2
 
             })
