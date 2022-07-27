@@ -94,7 +94,7 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'favicon' => '/packages/sleepingowl/default/images/favicon.ico',
+    'favicon' => 'https://moresushi.in.ua/catalog/view/theme/default/image/icons/favs/apple-icon-57x57.png',
 
     /*
     |--------------------------------------------------------------------------

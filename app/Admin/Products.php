@@ -17,7 +17,7 @@ AdminSection::registerModel(Product::class, function (ModelConfiguration $model)
         )->paginate(10);
         return $display;
     });
-    $model->creating(function(ModelConfiguration $model, Product $product) {
+    $model->created(function(ModelConfiguration $model, Product $product) {
         $product->slug = Str::slug($product->title, '-');
         $product->save();
     });
