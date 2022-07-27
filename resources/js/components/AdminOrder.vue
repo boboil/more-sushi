@@ -3,9 +3,9 @@
         <form id="app" class="order-form">
             <div v-if="errors.length">
                 <b>Пожалуйста исправьте:</b>
-            <ul>
-                <li v-for="error in errors">{{ error }}</li>
-            </ul>
+                <ul>
+                    <li v-for="error in errors">{{ error }}</li>
+                </ul>
             </div>
             <div class="input-group m-3 roll col-sm-10" v-for="(item, index) in selected">
                 <div class="row">
@@ -19,11 +19,13 @@
                 </div>
                 <div class="row">
                     <div class="col-12">
-                        <select class="form-select" required v-model="item.id" name="selected[][title]">
-                            <option value="" disabled selected hidden >Выберете ролл</option>
-                            <option v-for="option in options" :value="option.value">{{ option.text }}</option>
+                        <select class="form-select" required v-model="item.id" name="selected[][title]"
+                                @change="selectOption($event)">
+                            <option value="" disabled selected hidden>Выберете ролл</option>
+                            <option v-for="option in options" :value="option.value" :disabled="option.disable">{{ option.text }}</option>
                         </select>
-                        <input type="number" step="1"  v-model="item.quantity" name="selected[][quantity]" class="form-control"
+                        <input type="number" step="1" v-model="item.quantity" name="selected[][quantity]"
+                               class="form-control"
                                aria-label="Text input with dropdown button"
                                placeholder="колличество" required>
                     </div>
@@ -100,6 +102,13 @@ export default {
         }
     },
     methods: {
+        selectOption(event) {
+            this.options.forEach(option => {
+                if (parseInt(option.value) === parseInt(event.target.value)) {
+                    option.disable = true
+                }
+            })
+        },
         getProducts() {
             this.loading = true
             return axios.get('/api/admin-order')
@@ -107,7 +116,7 @@ export default {
                     this.loading = false;
                     this.products = response.data.data
                     this.options = this.products.map(product => {
-                        return {value: product.id, text: product.title}
+                        return {value: product.id, text: product.title, disable: false}
                     })
                 })
         },
@@ -127,13 +136,10 @@ export default {
                     this.errors.push('Заполните все поля формы');
                 }
             })
-            if (!this.address){
+            if (!this.address) {
                 this.errors.push('Заполните все поля формы');
             }
-            console.log(
-                'select', this.selected,
-                'erorr', this.errors
-            )
+
             if (this.errors.length > 0) {
                 console.log('break')
                 return true;
@@ -171,44 +177,49 @@ export default {
 
 <style scoped>
 /*--thank you pop starts here--*/
-.thank-you-pop{
-    width:100%;
-    padding:20px;
-    text-align:center;
-}
-.thank-you-pop img{
-    width:76px;
-    height:auto;
-    margin:0 auto;
-    display:block;
-    margin-bottom:25px;
+.thank-you-pop {
+    width: 100%;
+    padding: 20px;
+    text-align: center;
 }
 
-.thank-you-pop h1{
+.thank-you-pop img {
+    width: 76px;
+    height: auto;
+    margin: 0 auto;
+    display: block;
+    margin-bottom: 25px;
+}
+
+.thank-you-pop h1 {
     font-size: 42px;
     margin-bottom: 25px;
-    color:#5C5C5C;
+    color: #5C5C5C;
 }
-.thank-you-pop p{
+
+.thank-you-pop p {
     font-size: 20px;
     margin-bottom: 27px;
-    color:#5C5C5C;
+    color: #5C5C5C;
 }
-.thank-you-pop h3.cupon-pop{
+
+.thank-you-pop h3.cupon-pop {
     font-size: 25px;
     margin-bottom: 40px;
-    color:#222;
-    display:inline-block;
-    text-align:center;
-    padding:10px 20px;
-    border:2px dashed #222;
-    clear:both;
-    font-weight:normal;
+    color: #222;
+    display: inline-block;
+    text-align: center;
+    padding: 10px 20px;
+    border: 2px dashed #222;
+    clear: both;
+    font-weight: normal;
 }
-.thank-you-pop h3.cupon-pop span{
-    color:#03A9F4;
+
+.thank-you-pop h3.cupon-pop span {
+    color: #03A9F4;
 }
-.thank-you-pop a{
+
+.thank-you-pop a {
     display: inline-block;
     margin: 0 auto;
     padding: 9px 20px;
@@ -218,13 +229,16 @@ export default {
     background-color: #8BC34A;
     border-radius: 17px;
 }
-.thank-you-pop a i{
-    margin-right:5px;
-    color:#fff;
+
+.thank-you-pop a i {
+    margin-right: 5px;
+    color: #fff;
 }
-#ignismyModal .modal-header{
-    border:0;
+
+#ignismyModal .modal-header {
+    border: 0;
 }
+
 /*--thank you pop ends here--*/
 
 </style>

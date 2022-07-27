@@ -25,11 +25,16 @@ import App from './App.vue';
 import AdminOrder from './components/AdminOrder.vue';
 import TodayOrders from './components/TodayOrders.vue';
 import ProductsTable from './components/ProductsTable.vue';
-import Register from './auth/Register.vue';
+import IndexComponent from './components/shop/IndexComponent.vue';
 import Login from './auth/Login.vue';
 
 
 const routes = [
+    {
+        name: 'index',
+        path: '/index',
+        component: IndexComponent
+    },
     {
         name: 'home',
         path: '/',
