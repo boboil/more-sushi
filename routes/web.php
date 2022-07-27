@@ -17,7 +17,9 @@ use App\Http\Controllers\AppController;
 //Route::get('/', function () {
 //    return view('welcome');
 //});
-Route::get('/{any}', [AppController::class, 'index'])->where('any', '.*');
+if (!strpos(url()->current(),"admin")) {
+    Route::get('/{any}', [AppController::class, 'index'])->where('any', '.*');
+}
 
 Auth::routes();
 

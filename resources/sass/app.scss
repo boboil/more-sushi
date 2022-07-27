@@ -1,14 +1,22 @@
 // Fonts
 @import url('https://fonts.googleapis.com/css?family=Nunito');
 
-// Variables
+//// Variables
 @import 'variables';
+//@import "mixins";
+//@import "general";
+//@import "header";
+//@import "components";
+//@import "blocks";
+//@import "footer";
+//@import "modal";
+//@import "mobile";
 
 // Define variable defaults
-$body-bg: #ffff;
-$body-color: #111;
+$body-bg: #fff;
+$body-color: #000;
 //// Bootstrap
 @import '~bootstrap/scss/bootstrap.scss';
-//@import '~bootstrap-vue/src/index.scss';
+//@import '~bootstrap-vue/src/index.scss'
 
 

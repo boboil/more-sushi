@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminOrderController;
 use \App\Http\Controllers\Api\UserController;
+use \App\Http\Controllers\Shop\ProductController;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,3 +33,6 @@ Route::delete('admin-remove-order/{order_id}', [AdminOrderController::class, 're
 Route::delete('admin-remove-product/{product_id}', [AdminOrderController::class, 'removeProduct']);
 Route::get('products', [AdminOrderController::class, 'getProducts']);
 
+Route::prefix('shop')->group(function () {
+    Route::get('product/{slug}', [ProductController::class, 'show']);
+});

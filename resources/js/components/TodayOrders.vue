@@ -95,9 +95,9 @@ export default {
             let bonus = 0
             this.orders.forEach(order => {
                 sum += order.sum_product
-                if (order.sum_product >= 10)
+                if (order.sum_product >= 10) {
                     bonus += 2
-
+                }
             })
             return sum + bonus
         },
@@ -118,6 +118,7 @@ export default {
             return axios.get('/api/today-admin-products')
                 .then((response) => {
                     this.products = response.data.data
+                    console.log(this.products)
                 })
         },
         deleteOrder(order) {
