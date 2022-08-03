@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminOrderController;
 use \App\Http\Controllers\Api\UserController;
 use \App\Http\Controllers\Shop\ProductController;
+use \App\Http\Controllers\Shop\CategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,4 +36,5 @@ Route::get('products', [AdminOrderController::class, 'getProducts']);
 
 Route::prefix('shop')->group(function () {
     Route::get('product/{slug}', [ProductController::class, 'show']);
+    Route::get('catalog', [CategoryController::class, 'index']);
 });

@@ -38,10 +38,15 @@ return [
         'title' => 'Магазин',
         'pages' => [
             (new Page(\App\Models\Shop\Product::class))
-                ->setPriority(100)
+                ->setPriority(1)
                 ->setIcon('fa fa-cube')
                 ->setUrl('admin/products')
-                ->setTitle('Товары')
+                ->setTitle('Товари'),
+            (new Page(\App\Models\Shop\Category::class))
+                ->setPriority(2)
+                ->setIcon('fa fa-cubes')
+                ->setUrl('admin/categories')
+                ->setTitle('Категорії')
         ]
     ],
 

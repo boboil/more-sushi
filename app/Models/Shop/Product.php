@@ -15,4 +15,8 @@ class Product extends Model
     {
         return self::where('slug', $slug)->first();
     }
+    public function category()
+    {
+        return $this->belongsToMany(Category::class, 'category_product_shop');
+    }
 }

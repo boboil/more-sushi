@@ -17,6 +17,10 @@ AdminSection::registerModel(Product::class, function (ModelConfiguration $model)
         )->paginate(10);
         return $display;
     });
+    $model->creating(function(ModelConfiguration $model, Product $product) {
+        $product->slug = Str::slug($_POST['title'], '-');
+        $product->title = $_POST['title'];
+    });
     $model->created(function(ModelConfiguration $model, Product $product) {
         $product->slug = Str::slug($product->title, '-');
         $product->save();
@@ -54,6 +58,9 @@ AdminSection::registerModel(Product::class, function (ModelConfiguration $model)
                 ], 4)
                 ->addColumn([
                     AdminFormElement::text('count', 'Кількість шт.')->required(),
+                ], 4)
+                ->addColumn([
+                    AdminFormElement::multiselect('category', 'Категорія', \App\Models\Shop\Category::class),
                 ], 4)
 
 
