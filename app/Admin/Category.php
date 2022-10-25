@@ -9,6 +9,7 @@ AdminSection::registerModel(Category::class, function (ModelConfiguration $model
         $display = AdminDisplay::datatablesAsync()->setHtmlAttribute('class', 'table-primary table-hover');
         $display->setColumns(
             AdminColumn::link('title')->setLabel('Назва'),
+            AdminColumn::image('image')->setLabel('Зображення'),
             AdminColumnEditable::checkbox('enable', 'Так', 'Ні')->setLabel('Активна'),
         )->paginate(10);
         return $display;
@@ -26,13 +27,16 @@ AdminSection::registerModel(Category::class, function (ModelConfiguration $model
             $panel->addHeader(AdminFormElement::columns()
                 ->addColumn([
                     AdminFormElement::text('title', 'Назва')->required(),
-                ], 4)
+                ], 5)
                 ->addColumn([
                     AdminFormElement::text('meta_title', 'Мета Заголовок'),
-                ], 4)
+                ], 5)
                 ->addColumn([
                     AdminFormElement::text('meta_description', 'Мета Опис'),
-                ], 4)
+                ], 5)
+                ->addColumn([
+                    AdminFormElement::image('image', 'Зображення'),
+                ], 5)
                 ->addColumn([
                     AdminFormElement::ckeditor('description', 'Опис Категорії'),
                 ], 12)

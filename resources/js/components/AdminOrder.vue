@@ -1,6 +1,6 @@
 <template>
     <main class="container">
-        <form id="app" class="order-form">
+        <form id="app" class="order-form" v-if="canEdit">
             <div v-if="errors.length">
                 <b>Пожалуйста исправьте:</b>
                 <ul>
@@ -22,7 +22,9 @@
                         <select class="form-select" required v-model="item.id" name="selected[][title]"
                                 @change="selectOption($event)">
                             <option value="" disabled selected hidden>Выберете ролл</option>
-                            <option v-for="option in options" :value="option.value" :disabled="option.disable">{{ option.text }}</option>
+                            <option v-for="option in options" :value="option.value" :disabled="option.disable">
+                                {{ option.text }}
+                            </option>
                         </select>
                         <input type="number" step="1" v-model="item.quantity" name="selected[][quantity]"
                                class="form-control"
@@ -55,32 +57,19 @@
 
             <div class="row">
                 <div class="col-xs-2">
-                    <button class="btn btn-block btn-primary" v-on:click="sendData">
+                    <button
+                        v-on:click="sendData"
+                        :disabled="!!loading"
+                        class="btn btn-block btn-primary"
+                    >
                         Заказать
                     </button>
                 </div>
             </div>
         </form>
-        <div class="modal fade" id="successModal" role="dialog">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label=""><span>×</span></button>
-                    </div>
-
-                    <div class="modal-body">
-
-                        <div class="thank-you-pop">
-                            <img src="http://goactionstations.co.uk/wp-content/uploads/2017/03/Green-Round-Tick.png"
-                                 alt="">
-                            <h1>Спасибо!</h1>
-                            <p>Заказ принят в обработку</p>
-                        </div>
-
-                    </div>
-
-                </div>
-            </div>
+        <div v-if="!canEdit">
+            <h1>Добавление заказов возможно с 12 до 24</h1>
+            <span>Спасибо за понимание!</span>
         </div>
     </main>
 </template>
@@ -98,7 +87,7 @@ export default {
             }],
             options: [],
             address: null,
-            errors: [],
+            errors: []
         }
     },
     methods: {
@@ -127,7 +116,8 @@ export default {
             this.selected.splice(index, 1);
         },
         sendData(event) {
-            this.errors = [];
+            this.errors = []
+            this.loading = true
             if (event) {
                 event.preventDefault()
             }
@@ -141,7 +131,7 @@ export default {
             }
 
             if (this.errors.length > 0) {
-                console.log('break')
+                this.loading = false
                 return true;
             }
             let data = {
@@ -158,6 +148,7 @@ export default {
                     }];
                     this.address = '';
                     this.showModal()
+                    this.loading = false
                 })
         },
         showModal() {
@@ -171,6 +162,13 @@ export default {
     },
     mounted() {
         this.getProducts()
+    },
+    computed: {
+        canEdit() {
+            let hours;
+            hours = new Date().getHours();
+            return hours > 12;
+        }
     }
 }
 </script>

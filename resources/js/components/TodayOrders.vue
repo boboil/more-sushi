@@ -23,7 +23,9 @@
                     {{ product.title }} - {{ product.quantity }} шт. <br>
                 </span>
                         </td>
-                        <td>{{ order.sum_product >= 10 ? '2 шт' : '-' }}</td>
+                        <td>
+                            {{ countBonusRolls(order.sum_product) ? `${countBonusRolls(order.sum_product)} шт` : '-' }}
+                        </td>
                         <td>{{ order.order_time }}</td>
                         <td v-if="auth">
                             <button type="button" class="btn btn-danger" @click="deleteOrder(order)">Удалить</button>
@@ -95,7 +97,9 @@ export default {
             let bonus = 0
             this.orders.forEach(order => {
                 sum += order.sum_product
-                if (order.sum_product >= 10) {
+                if (order.sum_product >= 20) {
+                    bonus += 4
+                } else if (order.sum_product >= 10) {
                     bonus += 2
                 }
             })
@@ -118,7 +122,6 @@ export default {
             return axios.get('/api/today-admin-products')
                 .then((response) => {
                     this.products = response.data.data
-                    console.log(this.products)
                 })
         },
         deleteOrder(order) {
@@ -135,6 +138,16 @@ export default {
                     })
                 })
             }
+        },
+        countBonusRolls(sum) {
+            let bonus;
+            if (sum >= 10) {
+                bonus = 2
+            }
+            if (sum >= 20) {
+                bonus = 4
+            }
+            return bonus;
         },
     },
     mounted() {

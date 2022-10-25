@@ -17,6 +17,9 @@ use \App\Http\Controllers\Shop\CategoryController;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+header('Access-Control-Allow-Origin: https://moresushi.in.ua');
+header('Access-Control-Allow-Headers: origin, x-requested-with, content-type');
+header('Access-Control-Allow-Methods: PUT, GET, POST, DELETE, OPTIONS');
 Route::post('login', [UserController::class, 'login']);
 Route::post('register', [UserController::class, 'register']);
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

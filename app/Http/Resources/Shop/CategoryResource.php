@@ -25,6 +25,7 @@ class CategoryResource extends JsonResource
             'meta_title' => $this->meta_title,
             'enable' => $this->enable,
             'meta_description' => $this->meta_description,
+            'image' => asset($this->image),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
 
