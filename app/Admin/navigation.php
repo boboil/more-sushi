@@ -46,7 +46,12 @@ return [
                 ->setPriority(2)
                 ->setIcon('fa fa-cubes')
                 ->setUrl('admin/categories')
-                ->setTitle('Категорії')
+                ->setTitle('Категорії'),
+            (new Page(\App\Models\Shop\Order::class))
+                ->setPriority(3)
+                ->setIcon('fa fa-cubes')
+                ->setUrl('admin/orders')
+                ->setTitle('Замовлення')
         ]
     ],
 

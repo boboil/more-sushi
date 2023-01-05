@@ -6,6 +6,7 @@ use App\Http\Controllers\AdminOrderController;
 use \App\Http\Controllers\Api\UserController;
 use \App\Http\Controllers\Shop\ProductController;
 use \App\Http\Controllers\Shop\CategoryController;
+use \App\Http\Controllers\Shop\OrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,7 +18,7 @@ use \App\Http\Controllers\Shop\CategoryController;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
-header('Access-Control-Allow-Origin: https://moresushi.in.ua');
+//header('Access-Control-Allow-Origin: https://moresushi.in.ua');
 header('Access-Control-Allow-Headers: origin, x-requested-with, content-type');
 header('Access-Control-Allow-Methods: PUT, GET, POST, DELETE, OPTIONS');
 Route::post('login', [UserController::class, 'login']);
@@ -40,4 +41,6 @@ Route::get('products', [AdminOrderController::class, 'getProducts']);
 Route::prefix('shop')->group(function () {
     Route::get('product/{slug}', [ProductController::class, 'show']);
     Route::get('catalog', [CategoryController::class, 'index']);
+    Route::get('related-products', [ProductController::class, 'getRelatedProducts']);
+    Route::post('add-order', [OrderController::class, 'addOrder']);
 });

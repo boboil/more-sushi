@@ -14,9 +14,7 @@ use App\Http\Controllers\AppController;
 |
 */
 
-//Route::get('/', function () {
-//    return view('welcome');
-//});
+//Route::get('/orders', [\App\Http\Controllers\Shop\OrderController::class, 'index']);
 if (!strpos(url()->current(),"admin")) {
     Route::get('/{any}', [AppController::class, 'index'])->where('any', '.*');
 }

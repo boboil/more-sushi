@@ -62,6 +62,9 @@ AdminSection::registerModel(Product::class, function (ModelConfiguration $model)
                 ->addColumn([
                     AdminFormElement::multiselect('category', 'Категорія', \App\Models\Shop\Category::class),
                 ], 4)
+                ->addColumn([
+                    AdminFormElement::checkbox('isRelated', 'Так', 'Ні')->setLabel('Супутні товари')
+                ], 4)
 
 
             );

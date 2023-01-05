@@ -11,9 +11,14 @@ class Product extends Model
 
     protected $table = 'product_shop';
 
+
     public static function getProductsBySlug($slug)
     {
         return self::where('slug', $slug)->first();
+    }
+    public static function getRelatedProducts()
+    {
+        return self::where('isRelated', true)->get();
     }
     public function category()
     {
