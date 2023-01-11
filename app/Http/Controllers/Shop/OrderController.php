@@ -14,7 +14,8 @@ class OrderController extends Controller
     {
         $customer = collect($request->input('customer'));
         $products = collect($request->input('products'));
-        $time = Carbon::parse($customer['time']['day']);
+        $time = Carbon::parse($customer['time']['day'] . $customer['time']['time']);
+        $sum = $request->input('sum');
         $order = new Order();
         $order->customer_name = $customer['name'];
         $order->customer_phone = $customer['phone'];
@@ -24,8 +25,9 @@ class OrderController extends Controller
         $order->online_payment = $customer['payment'];
         $order->sticks_educational = $customer['sticks']['educational'];
         $order->sticks_standard = $customer['sticks']['standard'];
-        $order->is_as_soon_as_possible = $customer['isAsSoonAsPossible'] == '1' ? 1 : 0;
-        $order->time = $time;
+        $order->is_as_soon_as_possible = $customer['isAsSoonAsPossible'] == 'true' ? 1 : 0;
+        $order->time = $time->toDateTime();
+        $order->sum = $sum;
         $order->save();
         foreach ($products as $product) {
             $order->products()->attach($product['id'], ['shop_product_quantity'=>$product['quantity']]);
@@ -36,12 +38,7 @@ class OrderController extends Controller
     }
     public function index()
     {
-        $orders = Order::all();
-        foreach ($orders as $key => $order) {
-            if ($key == 7){
-                dd($order->products);
-            }
-        }
-
+        $orders = Order::getTodayOrders();
+        dd($orders);
     }
 }

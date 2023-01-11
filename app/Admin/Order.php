@@ -11,7 +11,8 @@ AdminSection::registerModel(Order::class, function (ModelConfiguration $model) {
             AdminColumn::link('customer_name')->setLabel('Імʼя'),
             AdminColumn::text('customer_phone')->setLabel('Телефон'),
             AdminColumn::text('customer_delivery_type')->setLabel('Доставка'),
-            AdminColumn::text('online_payment')->setLabel('Оплата')
+            AdminColumn::text('online_payment')->setLabel('Оплата'),
+            AdminColumn::text('sum')->setLabel('Сумма замовлення (грн)')
         )->paginate(10);
         return $display;
     });
@@ -50,8 +51,11 @@ AdminSection::registerModel(Order::class, function (ModelConfiguration $model) {
                     AdminFormElement::checkbox('is_as_soon_as_possible', 'Як умога раніше')->required(),
                 ], 2)
                 ->addColumn([
+                    AdminFormElement::number('sum', 'Сумма замовлення (грн)')->required(),
+                ], 2)
+                ->addColumn([
                     AdminFormElement::manyToMany('products', [
-                        AdminFormElement::text('shop_product_quantity', 'Кількість'),
+                        AdminFormElement::number('shop_product_quantity', 'Кількість'),
                     ])->setRelatedElementDisplayName('title')->setLabel('Товар')
                 ], 12)
 

@@ -29,12 +29,6 @@ return [
     ],
 
     [
-        'title' => 'Information',
-        'icon' => 'fas fa-info-circle',
-        'url' => route('admin.information'),
-    ],
-
-    [
         'title' => 'Магазин',
         'pages' => [
             (new Page(\App\Models\Shop\Product::class))
@@ -49,9 +43,14 @@ return [
                 ->setTitle('Категорії'),
             (new Page(\App\Models\Shop\Order::class))
                 ->setPriority(3)
-                ->setIcon('fa fa-cubes')
+                ->setIcon('fa fa-gift')
                 ->setUrl('admin/orders')
-                ->setTitle('Замовлення')
+                ->setTitle('Замовлення'),
+            (new Page(\App\Models\Shop\Question::class))
+                ->setPriority(4)
+                ->setIcon('fa fa-question-circle')
+                ->setUrl('admin/questions')
+                ->setTitle('Зворотній звʼязок')
         ]
     ],
 

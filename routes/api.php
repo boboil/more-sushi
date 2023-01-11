@@ -7,6 +7,7 @@ use \App\Http\Controllers\Api\UserController;
 use \App\Http\Controllers\Shop\ProductController;
 use \App\Http\Controllers\Shop\CategoryController;
 use \App\Http\Controllers\Shop\OrderController;
+use \App\Http\Controllers\Shop\QuestionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,4 +44,5 @@ Route::prefix('shop')->group(function () {
     Route::get('catalog', [CategoryController::class, 'index']);
     Route::get('related-products', [ProductController::class, 'getRelatedProducts']);
     Route::post('add-order', [OrderController::class, 'addOrder']);
+    Route::post('add-question', [QuestionController::class, 'addQuestion']);
 });
