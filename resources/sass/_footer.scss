@@ -1,0 +1,49 @@
+.footer {
+    color: $grey;
+    padding: 16px 0;
+    box-shadow: 3px 5.2px 20.3px 6.8px rgba(0, 4, 2, 0.08);
+
+    .container {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+    }
+    .contacts {
+        display: flex;
+        align-items: center;
+        a, address {
+            font-style: normal;
+            display: flex;
+            align-items: center;
+            &:not(:last-child) {
+                margin-right: 40px;
+            }
+        }
+        img {
+            margin-right: 10px;
+        }
+    }
+
+    .phone {
+        img {
+            width: 19px;
+        }
+    }
+    .address {
+        img {
+            width: 17px;
+        }
+    }
+    .copyright {
+        text-align: center;
+        font-size: 13px;
+    }
+
+    .logo {
+        display: flex;
+        justify-content: flex-end;
+        img {
+            width: 100px;
+        }
+    }
+}

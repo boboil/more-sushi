@@ -1,9 +1,8 @@
 <?php
 
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 use App\Http\Controllers\AppController;
+use App\Http\Controllers\Utils\PosterAuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,20 +16,12 @@ use App\Http\Controllers\AppController;
 */
 
 //Route::get('/', function () {
-//    return Inertia::render('Welcome', [
-//        'canLogin' => Route::has('login'),
-//        'canRegister' => Route::has('register'),
-//        'laravelVersion' => Application::VERSION,
-//        'phpVersion' => PHP_VERSION,
-//    ]);
+//    return view('welcome');
 //});
-Route::get('/{any}', [AppController::class, 'index'])->where('any', '.*');
-
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
-
-require __DIR__.'/auth.php';
+Route::get('/poster-auth', [PosterAuthController::class, 'getProducts']);
+if (!strpos(url()->current(),"admin")) {
+    Route::get('/{any}', [AppController::class, 'index'])->where('any', '.*');
+}
 
 Auth::routes();
 

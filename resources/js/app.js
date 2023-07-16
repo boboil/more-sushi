@@ -1,32 +1,67 @@
-/**
- * First we will load all of this project's JavaScript dependencies which
- * includes Vue and other libraries. It is a great starting point when
- * building robust, powerful web applications using Vue and Laravel.
- */
+import YesterdayOrders from "./components/YesterdayOrders";
 
-require('./bootstrap');
+require("./bootstrap")
 
-window.Vue = require('vue').default;
+import Vue from 'vue';
 
-/**
- * The following block of code may be used to automatically register your
- * Vue components. It will recursively scan this directory for the Vue
- * components and automatically register them with their "basename".
- *
- * Eg. ./components/ExampleComponent.vue -> <example-component></example-component>
- */
+import VueRouter from 'vue-router';
+Vue.use(VueRouter);
 
-// const files = require.context('./', true, /\.vue$/i)
-// files.keys().map(key => Vue.component(key.split('/').pop().split('.')[0], files(key).default))
+window.axios = require('axios');
+import { BootstrapVue, IconsPlugin } from 'bootstrap-vue'
 
-Vue.component('example-component', require('./components/ExampleComponent.vue').default);
 
-/**
- * Next, we will create a fresh Vue application instance and attach it to
- * the page. Then, you may begin adding components to this application
- * or customize the JavaScript scaffolding to fit your unique needs.
- */
+// Import Bootstrap and BootstrapVue CSS files (order is important)
 
-const app = new Vue({
-    el: '#app',
-});
+import 'bootstrap-vue/dist/bootstrap-vue.css'
+
+// Make BootstrapVue available throughout your project
+Vue.use(BootstrapVue)
+// Optionally install the BootstrapVue icon components plugin
+Vue.use(IconsPlugin)
+
+import App from './App.vue';
+
+import AdminOrder from './components/AdminOrder.vue';
+import TodayOrders from './components/TodayOrders.vue';
+import ProductsTable from './components/ProductsTable.vue';
+import IndexComponent from './components/shop/IndexComponent.vue';
+import Login from './auth/Login.vue';
+
+
+const routes = [
+    {
+        name: 'index',
+        path: '/index',
+        component: IndexComponent
+    },
+    {
+        name: 'home',
+        path: '/',
+        component: AdminOrder
+    },
+    {
+        name: 'today-orders',
+        path: '/today-orders',
+        component: TodayOrders
+    },
+    {
+        name: 'yesterdayOrders',
+        path: '/yesterday-orders',
+        component: YesterdayOrders
+    },
+    {
+        name: 'products',
+        path: '/products',
+        component: ProductsTable
+    },
+    {
+        name: 'login',
+        path: '/login',
+        component: Login
+    },
+
+];
+Vue.prototype.$axios = axios
+const router = new VueRouter({ mode: 'history', routes: routes});
+new Vue(Vue.util.extend({ router }, App)).$mount('#app');
