@@ -19,10 +19,23 @@ class OrderController extends Controller
         $posterOrderProducts = [];
         foreach ($products as $product) {
             $item = Product::find($product['id']);
-            $posterOrderProducts[] = ['product_id' => $item->poster_id, 'count' =>$product['quantity']];
+            $posterOrderProducts[] = ['product_id' => $item->poster_id, 'count' => $product['quantity']];
         }
-//        $posterUtil = new PosterAuthController();
-//        $posterUtil->createIncomingOrder($posterOrderProducts, $customer['phone']);
+        $service_type = $customer['delivery'] === 'курʼєр' ? 3 : 1;
+        $delivery = [
+            'service_mode' => 1,
+            'client_address' => null
+        ];
+        if ($service_type === 3) {
+            $delivery = [
+                'service_mode' => 3,
+                'client_address' => $customer['street'] . ' ' . $customer['building']
+            ];
+        }
+        $comment = $this->commentToPosterOrder($customer);
+        $posterUtil = new PosterAuthController();
+        $posterOrder = $posterUtil->createIncomingOrder($posterOrderProducts, $customer['phone'], $delivery, $comment);
+
         $time = Carbon::parse($customer['time']['day'] . $customer['time']['time']);
         $sum = $request->input('sum');
         $order = new Order();
@@ -42,8 +55,22 @@ class OrderController extends Controller
             $order->products()->attach($product['id'], ['shop_product_quantity' => $product['quantity']]);
         }
         return new JsonResponse([
-            'data' => $order
+            'data' => $order,
+            'posterOrder' => $posterOrder
         ]);
+    }
+
+    public function commentToPosterOrder($customer): string
+    {
+        $delivery = $customer['delivery'] === 'курʼєр' ? $customer['delivery'].': '.$customer['street'] . ' ' . $customer['building'] : $customer['delivery'];
+        $time = Carbon::parse($customer['time']['day'] . $customer['time']['time']);
+        $comment = "Заказ с сайта" .PHP_EOL;
+        $comment .= "Клиент: " . $customer['name'].PHP_EOL;
+        $comment .= $delivery .PHP_EOL;
+        $comment .= "Оплата: " . $customer['payment'].PHP_EOL;
+        $comment .= "Палочки: " . $customer['sticks']['standard'] .' стандартных.'. $customer['sticks']['educational'].' учебных.'.PHP_EOL;
+        $comment .= $customer['isAsSoonAsPossible'] == 'true' ? 'Как можно быстрее' : 'На время: '. $time->format('d-m-Y H:i').PHP_EOL;
+        return $comment;
     }
 
     public function index()

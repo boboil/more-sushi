@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Shop\ProductCollection;
 use App\Models\Shop\Product;
 use Illuminate\Http\Request;
+use JetBrains\PhpStorm\NoReturn;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 class ProductController extends Controller
@@ -22,5 +23,10 @@ class ProductController extends Controller
     {
         $products = Product::getRelatedProducts();
         return new ProductCollection($products);
+    }
+    public function deleteSelected(Request $request): void
+    {
+        $pr_ids = $request->input('_id');
+        Product::whereIn('id', $pr_ids)->delete();
     }
 }

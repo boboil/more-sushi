@@ -6,8 +6,17 @@ use Illuminate\Support\Str;
 
 AdminSection::registerModel(Product::class, function (ModelConfiguration $model) {
     $model->onDisplay(function () {
-        $display = AdminDisplay::datatablesAsync()->setHtmlAttribute('class', 'table-primary table-hover');
+        $display = AdminDisplay::datatablesAsync()->setHtmlAttribute('class', 'table-primary table-hover')
+            ->setActions([
+                AdminColumn::action('import', 'Синхронизировать с постером')->usePost()->setAction(route('import.products')),
+                AdminColumn::action('delete', 'Видалити обрані')->usePost()->setAction(route('delete.products')),
+            ]);
+        $display->setColumnFilters([
+            null,
+            AdminColumnFilter::text('title')->setPlaceholder('Назва')->setOperator('contains')
+        ]);
         $display->setColumns(
+            AdminColumn::checkbox(),
             AdminColumn::link('title')->setLabel('Назва'),
             AdminColumn::text('price')->setLabel('Ціна'),
             AdminColumn::text('discount')->setLabel('Скидка'),

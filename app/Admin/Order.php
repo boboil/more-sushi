@@ -13,7 +13,7 @@ AdminSection::registerModel(Order::class, function (ModelConfiguration $model) {
             AdminColumn::text('customer_delivery_type')->setLabel('Доставка'),
             AdminColumn::text('online_payment')->setLabel('Оплата'),
             AdminColumn::text('sum')->setLabel('Сумма замовлення (грн)'),
-            AdminColumn::datetime('created_at', 'Дата замовленння')->setFormat('d.m.Y H:i')
+            AdminColumn::datetime('time', 'Дата замовленння')->setFormat('d.m.Y H:i')
         )->paginate(10);
         return $display;
     });

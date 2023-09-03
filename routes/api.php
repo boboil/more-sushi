@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminOrderController;
 use \App\Http\Controllers\Api\UserController;
+use \App\Http\Controllers\Api\SitemapController;
 use \App\Http\Controllers\Shop\ProductController;
 use \App\Http\Controllers\Shop\CategoryController;
 use \App\Http\Controllers\Shop\OrderController;
@@ -42,7 +43,9 @@ Route::get('products', [AdminOrderController::class, 'getProducts']);
 Route::prefix('shop')->group(function () {
     Route::get('product/{slug}', [ProductController::class, 'show']);
     Route::get('catalog', [CategoryController::class, 'index']);
+    Route::get('stock', [CategoryController::class, 'stock']);
     Route::get('related-products', [ProductController::class, 'getRelatedProducts']);
     Route::post('add-order', [OrderController::class, 'addOrder']);
     Route::post('add-question', [QuestionController::class, 'addQuestion']);
+    Route::get('sitemap', [SitemapController::class, 'index']);
 });

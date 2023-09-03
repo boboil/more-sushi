@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use GuzzleHttp\Client;
+use Intervention\Image\Facades\Image;
+use mysql_xdevapi\Exception;
 
 class PosterAuthController extends Controller
 {
@@ -39,7 +41,7 @@ class PosterAuthController extends Controller
     {
         $url = 'https://joinposter.com/api/menu.getCategories'
             . '?token=' . $this->token
-            . '&fiscal=0';
+            . '&fiscal=1';
 
         $data = $this->sendRequest($url);
         dd($data);
@@ -59,19 +61,32 @@ class PosterAuthController extends Controller
     {
         $fullUrl = "https://dmlushpi13.joinposter.com/" . $url;
         $filename = basename($fullUrl);
+        $extension = pathinfo($filename, PATHINFO_EXTENSION);
 
+        $availableExt = ['jpg', 'png', 'gif', 'bmp', 'webp', 'jpeg'];
         $client = new Client();
-
         $response = $client->get($fullUrl);
-
         Storage::disk('public')->put('products/' . $filename, $response->getBody());
+        if (in_array($extension, $availableExt)) {
+            $img = Image::make('images/products/' . $filename);
+            $path = 'images/products/converted/' . $img->filename . '.webp';
+            $width = $img->width();
+            if ($width > 600) {
+                $img->resize(600, 600, function ($constraint) {
+                    $constraint->aspectRatio();
+                    $constraint->upsize();
+                });
+            }
+            $img->encode('webp', 100)->save($path);
+            return $path;
+        }
 
-        return 'images/products/' . $filename;
+//        Storage::disk('public')->delete('products/' . $filename, $response->getBody());
+        return $filename;
     }
 
-    public function getProducts()
+    public function getProducts(Request $request)
     {
-        dd('silence');
         $categories_id = [3 => 5, 5 => 1, 7 => 3, 15 => 4, 18 => 6];
 
         foreach ($categories_id as $key => $category_id) {
@@ -90,27 +105,29 @@ class PosterAuthController extends Controller
                 if ($product) {
 //                    $product->poster_id = $item['product_id'];
                     $product->price = $this->transformPrice($item['price']['4']);
+                    $product->main_image = $this->saveImage($item['photo_origin']);
                     $product->save();
+                } else {
+                    $product = new Product();
+                    $product->title = $item['product_name'];
+                    $product->price = $this->transformPrice($item['price']['4']);
+                    $product->count = 1;
+                    $product->weight = $item['out'];
+//                        $product->consist = $this->trasformIngridients($item['ingredients']);
+                    $product->consist = '';
+                    $product->stock = 0;
+                    $product->latest = 0;
+                    $product->main_image = $this->saveImage($item['photo_origin']);
+                    $product->description = $item['product_production_description'];
+                    $product->slug = Str::slug($item['product_name']);
+                    $product->isRelated = 0;
+                    $product->poster_id = $item['product_id'];
+                    $product->save();
+                    $product->category()->attach($category_site_id);
+
                 }
             }
         }
-        dd('done');
-//        foreach ($data['response'] as $item) {
-//            $product = new Product();
-//            $product->title = $item['product_name'];
-//            $product->price = $this->transformPrice($item['price']['4']);
-//            $product->count = 1;
-//            $product->weight = $item['out'];
-//            $product->consist = $this->trasformIngridients($item['ingredients']);
-//            $product->stock = 0;
-//            $product->latest = 0;
-//            $product->main_image = $this->saveImage($item['photo_origin']);
-//            $product->description = $item['product_production_description'];
-//            $product->slug = Str::slug($item['product_name']);
-//            $product->isRelated = 0;
-//            $product->save();
-//            $product->category()->attach($category_site_id);
-//        }
         dd($data);
     }
 
@@ -133,14 +150,17 @@ class PosterAuthController extends Controller
         return (int)$price / 100;
     }
 
-    public function createIncomingOrder($products, $phone)
+    public function createIncomingOrder($products, $phone, $delivery, $comment)
     {
         $url = 'https://joinposter.com/api/incomingOrders.createIncomingOrder'
             . '?token=' . $this->token;
         $incoming_order = [
             'spot_id' => 4,
             'phone' => $phone,
-            'products' => $products
+            'service_mode'=> $delivery['service_mode'],
+            'client_address'=> $delivery['client_address'],
+            'products' => $products,
+            'comment' => $comment
         ];
         return $this->sendRequest($url, $incoming_order, 'post');
     }
