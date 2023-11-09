@@ -29,12 +29,15 @@ class OrderController extends Controller
         if ($service_type === 3) {
             $delivery = [
                 'service_mode' => 3,
-                'client_address' => $customer['street'] . ' ' . $customer['building']
+                'client_address' => [
+                    'address1' => $customer['street'],
+                    'address2' => $customer['building']
+                ]
             ];
         }
         $comment = $this->commentToPosterOrder($customer);
         $posterUtil = new PosterAuthController();
-        $posterOrder = $posterUtil->createIncomingOrder($posterOrderProducts, $customer['phone'], $delivery, $comment);
+        $posterOrder = $posterUtil->createIncomingOrder($posterOrderProducts, $customer, $delivery, $comment);
 
         $time = Carbon::parse($customer['time']['day'] . $customer['time']['time']);
         $sum = $request->input('sum');

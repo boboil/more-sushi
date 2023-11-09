@@ -20,6 +20,7 @@ use App\Http\Controllers\Shop\ProductController;
 //    return view('welcome');
 //});
 Route::post('/poster-auth', [PosterAuthController::class, 'getProducts'])->name('import.products');
+Route::post('fix-images', [ProductController::class, 'fixImagesInProduct'])->name('fix.images');
 Route::post('/delete-products', [ProductController::class, 'deleteSelected'])->name('delete.products');
 if (!strpos(url()->current(),"admin")) {
     Route::get('/{any}', [AppController::class, 'index'])->where('any', '.*');

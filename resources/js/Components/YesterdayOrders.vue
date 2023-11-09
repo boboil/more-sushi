@@ -22,7 +22,9 @@
                     {{ product.title }} - {{ product.quantity }} шт. <br>
                 </span>
                         </td>
-                        <td>{{ order.sum_product >= 10 ? '2 шт' : '-' }}</td>
+                        <td>
+                            {{ countBonusRolls(order.sum_product) }}
+                        </td>
                         <td>{{ order.order_time }}</td>
                     </tr>
                     </tbody>
@@ -90,9 +92,13 @@ export default {
             let bonus = 0
             this.orders.forEach(order => {
                 sum += order.sum_product
-                if (order.sum_product >= 10)
+                if (order.sum_product >= 20) {
+                    bonus += 4
+                } else if (order.sum_product >= 10) {
                     bonus += 2
-
+                } else if (order.sum_product >= 5) {
+                    bonus += 1
+                }
             })
             return sum + bonus
         },
@@ -113,8 +119,21 @@ export default {
             return axios.get('/api/yesterday-admin-products')
                 .then((response) => {
                     this.products = response.data.data
-                    console.log(this.products)
                 })
+        },
+        countBonusRolls(sum) {
+            let bonus;
+            if (sum >= 20) {
+                bonus = 4
+            } else if (sum >= 10) {
+                bonus = 2
+            }else if (sum >= 5) {
+                bonus = 1
+            }
+            if (bonus) {
+                return `${bonus} шт`
+            }
+            return `-`
         }
     },
     mounted() {

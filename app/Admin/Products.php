@@ -9,6 +9,7 @@ AdminSection::registerModel(Product::class, function (ModelConfiguration $model)
         $display = AdminDisplay::datatablesAsync()->setHtmlAttribute('class', 'table-primary table-hover')
             ->setActions([
                 AdminColumn::action('import', 'Синхронизировать с постером')->usePost()->setAction(route('import.products')),
+                AdminColumn::action('fix-images', 'Оптимизировать картинки')->usePost()->setAction(route('fix.images')),
                 AdminColumn::action('delete', 'Видалити обрані')->usePost()->setAction(route('delete.products')),
             ]);
         $display->setColumnFilters([

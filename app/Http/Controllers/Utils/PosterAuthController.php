@@ -59,7 +59,7 @@ class PosterAuthController extends Controller
 
     public function saveImage($url)
     {
-        $fullUrl = "https://dmlushpi13.joinposter.com/" . $url;
+        $fullUrl = "https://dmlushpi13.joinposter.com" . $url;
         $filename = basename($fullUrl);
         $extension = pathinfo($filename, PATHINFO_EXTENSION);
 
@@ -150,13 +150,14 @@ class PosterAuthController extends Controller
         return (int)$price / 100;
     }
 
-    public function createIncomingOrder($products, $phone, $delivery, $comment)
+    public function createIncomingOrder($products, $customer, $delivery, $comment)
     {
         $url = 'https://joinposter.com/api/incomingOrders.createIncomingOrder'
             . '?token=' . $this->token;
         $incoming_order = [
             'spot_id' => 4,
-            'phone' => $phone,
+            'first_name' => $customer['name'],
+            'phone' => $customer['phone'],
             'service_mode'=> $delivery['service_mode'],
             'client_address'=> $delivery['client_address'],
             'products' => $products,
