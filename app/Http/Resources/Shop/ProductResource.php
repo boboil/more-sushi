@@ -2,6 +2,9 @@
 
 namespace App\Http\Resources\Shop;
 
+use App\Models\Shop\Product;
+use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
@@ -10,11 +13,12 @@ class ProductResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return array|\Illuminate\Contracts\Support\Arrayable|\JsonSerializable
+     * @param  Request  $request
+     * @return array
      */
     public function toArray($request)
     {
+        /** @var $this Product */
         return [
             'id' => $this->id,
             'title' => $this->title,
@@ -31,6 +35,7 @@ class ProductResource extends JsonResource
             'images' => $this->images,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'category' => $this->category
             ];
     }
 }

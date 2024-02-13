@@ -16,11 +16,13 @@ class PosterAuthController extends Controller
 {
 //    protected $token = "712773:9192826f326dccc5d5e9b2e818b72c5b"; //my token
     protected $token = "726501:18290431aced2defb79f3e103ae5730a"; //Platon token
+//    protected $token = "336946:30163278551298e56a8cb453dbfc660f"; //Roman token
 
 
     public function posterAuth()
     {
         $account = 'dmlushpi132';
+//        $account = 'sofa-spa-jc';
         $code = 'd85b9a4090de3e00c472271689373619';
 
         $url = "https://$account.joinposter.com/api/v2/auth/access_token";
@@ -41,7 +43,7 @@ class PosterAuthController extends Controller
     {
         $url = 'https://joinposter.com/api/menu.getCategories'
             . '?token=' . $this->token
-            . '&fiscal=1';
+            . '&fiscal=0';
 
         $data = $this->sendRequest($url);
         dd($data);

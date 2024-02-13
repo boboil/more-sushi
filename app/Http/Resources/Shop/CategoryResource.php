@@ -16,7 +16,7 @@ class CategoryResource extends JsonResource
      */
     public function toArray($request)
     {
-        $products = $this->products;
+        $products = $this->products->where('isActive', true);
         return [
             'id' => $this->id,
             'title' => $this->title,

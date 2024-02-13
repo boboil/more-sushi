@@ -93,19 +93,17 @@ export default {
             return sum
         },
         countBonusInOrder() {
-            let sum = 0
-            let bonus = 0
+            let sum = 0;
+            let bonus = 0;
             this.orders.forEach(order => {
-                sum += order.sum_product
-                if (order.sum_product >= 20) {
-                    bonus += 4
+                sum += order.sum_product;
+                if (order.sum_product >= 5 && order.sum_product <= 10) {
+                    bonus += 1;
                 } else if (order.sum_product >= 10) {
-                    bonus += 2
-                } else if (order.sum_product >= 5) {
-                    bonus += 1
+                    bonus += (Math.floor((order.sum_product - 10) / 10) + 1) * 2;
                 }
-            })
-            return sum + bonus
+            });
+            return sum + bonus;
         },
         countBonus() {
             return this.countBonusInOrder - this.sumTodayProducts
@@ -142,18 +140,13 @@ export default {
             }
         },
         countBonusRolls(sum) {
-            let bonus;
-            if (sum >= 20) {
-                bonus = 4
+            let bonus = 0;
+            if (sum >= 5 && sum <= 10) {
+                bonus = 1;
             } else if (sum >= 10) {
-                bonus = 2
-            } else if (sum >= 5) {
-                bonus = 1
+                bonus += (Math.floor((sum - 10) / 10) + 1) * 2;
             }
-            if (bonus) {
-                return `${bonus} шт`
-            }
-            return `-`
+            return bonus ? `${bonus} шт` : `-`;
         }
     },
     mounted() {
@@ -165,7 +158,3 @@ export default {
     }
 }
 </script>
-
-<style scoped>
-
-</style>

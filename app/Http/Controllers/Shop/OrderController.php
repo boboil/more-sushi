@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Shop;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Utils\PosterAuthController;
 use App\Models\Shop\Order;
+use App\Models\Landing\Order as LOrder;
 use App\Models\Shop\Product;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -80,5 +81,29 @@ class OrderController extends Controller
     {
         $orders = Order::getTodayOrders();
         dd($orders);
+    }
+
+    public function addLandingOrder(Request $request)
+    {
+        $customer = collect($request->input('customer'));
+        $products = collect($request->input('products'));
+        $sum = 0;
+        foreach ($products as $product) {
+            $sum += $product['price'] * $product['quantity'];
+        }
+        $time = Carbon::parse('31-12-2023 ' . $customer['time']);
+        $order = new LOrder();
+        $order->name = $customer['name'];
+        $order->phone = $customer['phone'];
+        $order->address = $customer['address'];
+        $order->time = $time->toDateTime();
+        $order->sum = $sum;
+        $order->save();
+        foreach ($products as $product) {
+            $order->products()->attach($product['id'], ['shop_product_quantity' => $product['quantity']]);
+        }
+        return new JsonResponse([
+            'data' => $order
+        ]);
     }
 }

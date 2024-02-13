@@ -1,6 +1,7 @@
 <?php
 
 use SleepingOwl\Admin\Navigation\Page;
+use App\Models\Landing\Order as LOrder;
 
 // Default check access logic
 // AdminNavigation::setAccessLogic(function(Page $page) {
@@ -30,6 +31,7 @@ return [
 
     [
         'title' => 'Магазин',
+        'icon' => 'fa fa-shopping-cart',
         'pages' => [
             (new Page(\App\Models\Shop\Product::class))
                 ->setPriority(1)
@@ -51,6 +53,17 @@ return [
                 ->setIcon('fa fa-question-circle')
                 ->setUrl('admin/questions')
                 ->setTitle('Зворотній звʼязок')
+        ]
+    ],
+
+    [
+        'title' => 'Лендінг',
+        'icon' => 'fa fa-file',
+        'pages' => [
+            (new Page(LOrder::class))
+                ->setPriority(1)
+                ->setIcon('fa fa-archive')
+                ->setTitle('Замовлення з лендінгу'),
         ]
     ],
 

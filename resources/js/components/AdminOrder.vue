@@ -165,9 +165,9 @@ export default {
     },
     computed: {
         canEdit() {
-            let hours;
-            hours = new Date().getHours();
-            return hours > 12;
+            const hours = new Date().getHours();
+            // return hours > 12;
+            return true
         }
     }
 }

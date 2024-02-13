@@ -58,4 +58,10 @@ class ProductController extends Controller
             $product->save();
         }
     }
+
+    public function landingProducts(): ProductCollection
+    {
+        $products = Product::getProductsForLanding();
+        return new ProductCollection($products);
+    }
 }

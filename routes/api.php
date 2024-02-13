@@ -36,6 +36,7 @@ Route::get('yesterday-admin-orders', [AdminOrderController::class, 'indexAdminYe
 Route::get('yesterday-admin-products', [AdminOrderController::class, 'indexAdminYesterdayProducts']);
 Route::post('admin-create-order', [AdminOrderController::class, 'addOrder']);
 Route::post('admin-create-product', [AdminOrderController::class, 'addProduct']);
+Route::post('admin-update-product', [AdminOrderController::class, 'updateProduct']);
 Route::delete('admin-remove-order/{order_id}', [AdminOrderController::class, 'removeOrder']);
 Route::delete('admin-remove-product/{product_id}', [AdminOrderController::class, 'removeProduct']);
 Route::get('products', [AdminOrderController::class, 'getProducts']);
@@ -48,4 +49,6 @@ Route::prefix('shop')->group(function () {
     Route::post('add-order', [OrderController::class, 'addOrder']);
     Route::post('add-question', [QuestionController::class, 'addQuestion']);
     Route::get('sitemap', [SitemapController::class, 'index']);
+    Route::get('landing-products', [ProductController::class, 'landingProducts']);
+    Route::post('landing-order', [OrderController::class, 'addLandingOrder']);
 });

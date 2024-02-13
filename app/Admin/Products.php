@@ -24,7 +24,9 @@ AdminSection::registerModel(Product::class, function (ModelConfiguration $model)
             AdminColumn::image('main_image')->setLabel('Картинка'),
             AdminColumnEditable::checkbox('stock', 'Так', 'Ні')->setLabel('Акція'),
             AdminColumnEditable::checkbox('latest', 'Так', 'Ні')->setLabel('Новинка'),
-            AdminColumnEditable::checkbox('isRelated', 'Так', 'Ні')->setLabel('Супутній товар')
+            AdminColumnEditable::checkbox('isRelated', 'Так', 'Ні')->setLabel('Супутній товар'),
+            AdminColumnEditable::checkbox('isActive', 'Так', 'Ні')->setLabel('Відображати на сайті'),
+            AdminColumnEditable::checkbox('for_landing', 'Так', 'Ні')->setLabel('Відображати на лендінг')
         )->paginate(10);
         return $display;
     });

@@ -2,10 +2,36 @@
 
 namespace App\Models\Shop;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
+
+/**
+ * Class Product
+ *
+ * @property string $title
+ * @property string $description
+ * @property float $price
+ * @property float $discount
+ * @property string $main_image
+ * @property array $images
+ * @property int $sort_order
+ * @property string $slug
+ * @property string $consist
+ * @property boolean $for_landing
+ * @property boolean $stock
+ * @property int $count
+ * @property int $weight
+ * @property boolean $isRelated
+ * @property boolean $latest
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Collection|Category $category The category associated with the product.
+ *
+ */
 class Product extends Model
 {
     use HasFactory;
@@ -49,5 +75,10 @@ class Product extends Model
     }
     public function transformPrice ($price) {
         return (int)$price / 100;
+    }
+
+    public static function getProductsForLanding()
+    {
+        return self::where('for_landing', true)->with('category')->get();
     }
 }
