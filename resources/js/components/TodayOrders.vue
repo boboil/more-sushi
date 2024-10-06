@@ -19,11 +19,13 @@
                         <th scope="row">{{ key + 1 }}</th>
                         <td>{{ order.address }}</td>
                         <td>
-                <span v-for="product in order.products.data">
-                    {{ product.title }} - {{ product.quantity }} шт. <br>
-                </span>
+                            <span v-for="product in order.products.data">
+                                {{ product.title }} - {{ product.quantity }} шт. <br>
+                            </span>
                         </td>
-                        <td>{{ order.sum_product >= 10 ? '2 шт' : '-' }}</td>
+                        <td>
+                            {{ countBonusRolls(order.sum_product) }}
+                        </td>
                         <td>{{ order.order_time }}</td>
                         <td v-if="auth">
                             <button type="button" class="btn btn-danger" @click="deleteOrder(order)">Удалить</button>
@@ -95,8 +97,12 @@ export default {
             let bonus = 0
             this.orders.forEach(order => {
                 sum += order.sum_product
-                if (order.sum_product >= 10) {
+                if (order.sum_product >= 20) {
+                    bonus += 4
+                } else if (order.sum_product >= 10) {
                     bonus += 2
+                } else if (order.sum_product >= 5) {
+                    bonus += 1
                 }
             })
             return sum + bonus
@@ -118,7 +124,6 @@ export default {
             return axios.get('/api/today-admin-products')
                 .then((response) => {
                     this.products = response.data.data
-                    console.log(this.products)
                 })
         },
         deleteOrder(order) {
@@ -136,6 +141,20 @@ export default {
                 })
             }
         },
+        countBonusRolls(sum) {
+            let bonus;
+            if (sum >= 20) {
+                bonus = 4
+            } else if (sum >= 10) {
+                bonus = 2
+            } else if (sum >= 5) {
+                bonus = 1
+            }
+            if (bonus) {
+                return `${bonus} шт`
+            }
+            return `-`
+        }
     },
     mounted() {
         this.getOrders()

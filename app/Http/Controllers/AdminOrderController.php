@@ -23,7 +23,6 @@ class AdminOrderController extends Controller
     public function index(Request $request): ProductCollection
     {
         $products = Product::getProducts();
-
         return new ProductCollection($products);
     }
 
@@ -167,10 +166,24 @@ class AdminOrderController extends Controller
      *
      * @return bool
      */
-    public function addProduct(Request $request)
+    public function addProduct(Request $request): bool
     {
         $product = new Product();
         $product->title = $request->input('title');
+        $product->sort_order = $request->input('sort_order');
+        $product->price = 0;
+        $product->save();
+
+        return true;
+    }
+
+    public function updateProduct(Request $request): bool
+    {
+        $product_id =  $request->input('id');
+        $product = Product::where('id', $product_id)->first();
+        /** @var Product $product */
+        $product->title = $request->input('title');
+        $product->sort_order = $request->input('sort_order');
         $product->price = 0;
         $product->save();
 

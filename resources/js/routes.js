@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import AdminOrder from './components/AdminOrder.vue';
+import AdminOrder from '@/components/AdminOrder.vue';
 
 
 Vue.use(VueRouter);

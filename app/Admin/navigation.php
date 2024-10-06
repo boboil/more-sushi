@@ -1,6 +1,7 @@
 <?php
 
 use SleepingOwl\Admin\Navigation\Page;
+use App\Models\Landing\Order as LOrder;
 
 // Default check access logic
 // AdminNavigation::setAccessLogic(function(Page $page) {
@@ -29,19 +30,40 @@ return [
     ],
 
     [
-        'title' => 'Information',
-        'icon' => 'fas fa-info-circle',
-        'url' => route('admin.information'),
+        'title' => 'Магазин',
+        'icon' => 'fa fa-shopping-cart',
+        'pages' => [
+            (new Page(\App\Models\Shop\Product::class))
+                ->setPriority(1)
+                ->setIcon('fa fa-cube')
+                ->setUrl('admin/products')
+                ->setTitle('Товари'),
+            (new Page(\App\Models\Shop\Category::class))
+                ->setPriority(2)
+                ->setIcon('fa fa-cubes')
+                ->setUrl('admin/categories')
+                ->setTitle('Категорії'),
+            (new Page(\App\Models\Shop\Order::class))
+                ->setPriority(3)
+                ->setIcon('fa fa-gift')
+                ->setUrl('admin/orders')
+                ->setTitle('Замовлення'),
+            (new Page(\App\Models\Shop\Question::class))
+                ->setPriority(4)
+                ->setIcon('fa fa-question-circle')
+                ->setUrl('admin/questions')
+                ->setTitle('Зворотній звʼязок')
+        ]
     ],
 
     [
-        'title' => 'Магазин',
+        'title' => 'Лендінг',
+        'icon' => 'fa fa-file',
         'pages' => [
-            (new Page(\App\Models\Shop\Product::class))
-                ->setPriority(100)
-                ->setIcon('fa fa-cube')
-                ->setUrl('admin/products')
-                ->setTitle('Товары')
+            (new Page(LOrder::class))
+                ->setPriority(1)
+                ->setIcon('fa fa-archive')
+                ->setTitle('Замовлення з лендінгу'),
         ]
     ],
 
