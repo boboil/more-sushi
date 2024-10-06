@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AppController;
+use App\Http\Controllers\Utils\PosterAuthController;
+use App\Http\Controllers\Shop\ProductController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,6 +19,9 @@ use App\Http\Controllers\AppController;
 //Route::get('/', function () {
 //    return view('welcome');
 //});
+Route::post('/poster-auth', [PosterAuthController::class, 'getProducts'])->name('import.products');
+Route::post('fix-images', [ProductController::class, 'fixImagesInProduct'])->name('fix.images');
+Route::post('/delete-products', [ProductController::class, 'deleteSelected'])->name('delete.products');
 if (!strpos(url()->current(),"admin")) {
     Route::get('/{any}', [AppController::class, 'index'])->where('any', '.*');
 }

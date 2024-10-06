@@ -1,11 +1,15 @@
 <?php
 
+use \App\Models\Shop\Order;
+
 Route::get('', ['as' => 'admin.dashboard', function () {
-	$content = 'Define your dashboard here.';
-	return AdminSection::view($content, 'Dashboard');
+    $orders = Order::getTodayOrders();
+    $content = 'Сьогодні ' . count($orders) . ' замовлень. <br/>';
+    $content .= 'На сумму ' . $orders->sum('sum') . ' грн.';
+	return AdminSection::view($content, 'Панель управління');
 }]);
 
 Route::get('information', ['as' => 'admin.information', function () {
-	$content = 'Define your information here.';
-	return AdminSection::view($content, 'Information');
+    $content = 'Define your information here.';
+    return AdminSection::view($content, 'Information');
 }]);

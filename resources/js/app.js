@@ -1,5 +1,3 @@
-import YesterdayOrders from "./components/YesterdayOrders";
-
 require("./bootstrap")
 
 import Vue from 'vue';
@@ -22,10 +20,11 @@ Vue.use(IconsPlugin)
 
 import App from './App.vue';
 
-import AdminOrder from './components/AdminOrder.vue';
-import TodayOrders from './components/TodayOrders.vue';
-import ProductsTable from './components/ProductsTable.vue';
-import IndexComponent from './components/shop/IndexComponent.vue';
+import AdminOrder from './components/AdminOrder.vue'
+import TodayOrders from './components/TodayOrders.vue'
+import ProductsTable from './components/ProductsTable.vue'
+import IndexComponent from './components/shop/IndexComponent.vue'
+import YesterdayOrders from './components/YesterdayOrders'
 import Login from './auth/Login.vue';
 
 

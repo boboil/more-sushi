@@ -28,7 +28,8 @@ return [
     |
     */
 
-    'env' => env('APP_ENV', 'production'),
+//    'env' => env('APP_ENV', 'production'),
+    'env' => env('local'),
 
     /*
     |--------------------------------------------------------------------------
@@ -190,6 +191,7 @@ return [
          * SleepingOwl Service Provider
          */
         SleepingOwl\Admin\Providers\SleepingOwlServiceProvider::class,
+        Intervention\Image\ImageServiceProvider::class,
         /*
          * Application Service Providers...
          */
@@ -214,6 +216,7 @@ return [
 
     'aliases' => Facade::defaultAliases()->merge([
         // 'ExampleClass' => App\Example\ExampleClass::class,
+        'Image' => Intervention\Image\Facades\Image::class,
     ])->toArray(),
 
 ];
