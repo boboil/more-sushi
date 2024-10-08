@@ -41,7 +41,8 @@ Route::post('admin-update-product', [AdminOrderController::class, 'updateProduct
 Route::delete('admin-remove-order/{order_id}', [AdminOrderController::class, 'removeOrder']);
 Route::delete('admin-remove-product/{product_id}', [AdminOrderController::class, 'removeProduct']);
 Route::get('products', [AdminOrderController::class, 'getProducts']);
-Route::get('get-users', [SalaryController::class, 'getUsers']);
+Route::post('get-employees-working-hours', [SalaryController::class, 'getEmployeesWorkingHours']);
+Route::post('get-working-hours-by-day', [SalaryController::class, 'getWorkingHoursByDay']);
 
 Route::prefix('shop')->group(function () {
     Route::get('product/{slug}', [ProductController::class, 'show']);

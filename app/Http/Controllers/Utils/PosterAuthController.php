@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Utils;
 use App\Http\Controllers\Controller;
 use App\Models\Shop\Category;
 use App\Models\Shop\Product;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
@@ -17,6 +19,8 @@ class PosterAuthController extends Controller
 //    protected $token = "712773:9192826f326dccc5d5e9b2e818b72c5b"; //my token
     protected $token = "726501:18290431aced2defb79f3e103ae5730a"; //Platon token
 //    protected $token = "336946:30163278551298e56a8cb453dbfc660f"; //Roman token
+
+    protected $baseUrl = "https://joinposter.com/api/";
 
 
     public function posterAuth()
@@ -160,42 +164,51 @@ class PosterAuthController extends Controller
             'spot_id' => 4,
             'first_name' => $customer['name'],
             'phone' => $customer['phone'],
-            'service_mode'=> $delivery['service_mode'],
-            'client_address'=> $delivery['client_address'],
+            'service_mode' => $delivery['service_mode'],
+            'client_address' => $delivery['client_address'],
             'products' => $products,
             'comment' => $comment
         ];
         return $this->sendRequest($url, $incoming_order, 'post');
     }
 
+    public function getUsersWorkingHours(Carbon $dateFrom, Carbon $dateTo)
+    {
+        $url = $this->baseUrl . 'dash.getWaitersSales'
+            . '?token=' . $this->token . '&dateFrom=' . $dateFrom->format('Ymd') . '&dateTo=' . $dateTo->format('Ymd');
+        $response = $this->sendRequest($url);
+        $employees = User::getAllWorkers()->get();
+        if (!is_null($response) && isset($response['response'])) {
+            $responseCollection = collect($response['response']);
+            return $responseCollection->map(function ($item) use ($employees) {
+                $user = $employees->firstWhere('poster_user_id', $item['user_id']);
+                if ($user) {
+                    return collect($user->toArray())->merge(collect($item));
+                }
+                return null;
+            })->filter();
+        }
+        return collect();
+    }
+
     function sendRequest($url, $data = [], $method = 'get')
     {
         $ch = curl_init();
-
         if ($method == 'post') {
             curl_setopt($ch, CURLOPT_POST, 1);
             curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
         }
-
-        // If you want to send a GET request instead,
-        // you could add elseif condition here (not necessary in your current code)
-
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-
         $headers = [
             'Content-Type: application/x-www-form-urlencoded'
         ];
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
         $output = curl_exec($ch);
-
         if ($output === FALSE) {
             return 'CURL Error:' . curl_error($ch);
         }
-
         curl_close($ch);
-
         return json_decode($output, true);
     }
 

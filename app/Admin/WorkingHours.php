@@ -21,7 +21,7 @@ AdminSection::registerModel(WorkingHours::class, function (ModelConfiguration $m
     $model->onCreateAndEdit(function ($id = null) {
         $panel = AdminForm::panel()
             ->addBody(
-                AdminFormElement::number('hours', 'Отработанные часы')->required(),
+                AdminFormElement::number('hours', 'Отработанные часы')->setStep(0.1)->required(),
                 AdminFormElement::date('working_day', 'Рабочий день')->required(),
                 AdminFormElement::select('user_id', 'Пользователи', User::class)->setDisplay('name'),
             );

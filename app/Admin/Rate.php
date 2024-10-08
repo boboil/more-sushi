@@ -5,7 +5,7 @@ use App\Models\Role;
 use SleepingOwl\Admin\Model\ModelConfiguration;
 
 AdminSection::registerModel(Rate::class, function (ModelConfiguration $model) {
-    $model->setTitle('Рейты ЗП');
+    $model->setTitle('Процент в день по группам');
     $model->onDisplay(function () {
 
         $display = AdminDisplay::datatablesAsync()->setHtmlAttribute('class', 'table-primary table-hover');
@@ -21,7 +21,7 @@ AdminSection::registerModel(Rate::class, function (ModelConfiguration $model) {
     $model->onCreateAndEdit(function ($id = null) {
         $panel = AdminForm::panel()
             ->addBody(
-                AdminFormElement::number('rate', 'Сумма для деления на группу')->required(),
+                AdminFormElement::number('rate', 'Сумма для деления на группу')->setStep(0.1)->required(),
                 AdminFormElement::date('working_date', 'Рабочий день')->required(),
                 AdminFormElement::select('role_id', 'Роли', Role::class)->setDisplay('label'),
             );

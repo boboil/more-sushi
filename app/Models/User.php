@@ -25,6 +25,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property Carbon|null $updated_at
  *
  * @property Collection|WorkingHours[] $workingDays The user associated with the working hours.
+ * @property Collection|Role[] $roles The user associated with the roles.
  */
 class User extends Authenticatable
 {
@@ -88,7 +89,7 @@ class User extends Authenticatable
     {
         return User::whereDoesntHave('roles', function ($query) {
             $query->where('name', 'admin');
-        });
+        })->with('roles');
     }
     public function workingHours(): HasMany
     {

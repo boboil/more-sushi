@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @property int $id
  * @property float $hours
+ * @property int $user_id
  * @property Carbon|null $working_day
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -25,6 +26,11 @@ class WorkingHours extends Model
     use HasFactory;
 
     protected $table = 'working_hours';
+    protected $fillable = [
+        'working_day',
+        'user_id',
+        'hours',
+    ];
 
     public function user(): BelongsTo
     {
