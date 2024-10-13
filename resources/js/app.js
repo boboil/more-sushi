@@ -25,6 +25,7 @@ import TodayOrders from './components/TodayOrders.vue'
 import ProductsTable from './components/ProductsTable.vue'
 import IndexComponent from './components/shop/IndexComponent.vue'
 import YesterdayOrders from './components/YesterdayOrders'
+import SalaryPage from './components/SalaryPage'
 import Login from './auth/Login.vue';
 
 
@@ -53,6 +54,11 @@ const routes = [
         name: 'products',
         path: '/products',
         component: ProductsTable
+    },
+    {
+        name: 'salary',
+        path: '/salary',
+        component: SalaryPage
     },
     {
         name: 'login',

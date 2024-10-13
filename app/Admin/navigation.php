@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\Rate;
+use App\Models\User;
+use App\Models\WorkingHours;
 use SleepingOwl\Admin\Navigation\Page;
 use App\Models\Landing\Order as LOrder;
 
@@ -23,6 +26,18 @@ use App\Models\Landing\Order as LOrder;
 // AdminSection::addMenuPage(\App\User::class)
 
 return [
+    AdminSection::addMenuPage(User::class)
+        ->setAccessLogic(function (Page $page) {
+        return auth()->user()->isSuperAdmin();
+    }),
+    AdminSection::addMenuPage(Rate::class)
+        ->setAccessLogic(function (Page $page) {
+        return auth()->user()->isSuperAdmin();
+    }),
+    AdminSection::addMenuPage(WorkingHours::class)
+        ->setAccessLogic(function (Page $page) {
+        return auth()->user()->isSuperAdmin();
+    }),
     [
         'title' => 'Dashboard',
         'icon' => 'fas fa-tachometer-alt',

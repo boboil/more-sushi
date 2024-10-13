@@ -15,8 +15,24 @@ class OrderController extends Controller
 {
     public function addOrder(Request $request)
     {
-        $customer = collect($request->input('customer'));
-        $products = collect($request->input('products'));
+        $validatedData = $request->validate([
+            'customer.name' => 'required|string|max:255',
+            'customer.phone' => ['required', 'regex:/^\+?[0-9]{9,15}$/'],
+            'customer.delivery' => 'required|string',
+            'customer.street' => 'nullable|string|max:255',
+            'customer.building' => 'nullable|string|max:255',
+            'customer.payment' => 'required|string',
+            'customer.sticks.educational' => 'nullable|integer',
+            'customer.sticks.standard' => 'nullable|integer',
+            'customer.time.day' => 'nullable|date_format:Y-m-d',
+            'customer.time.time' => 'nullable|date_format:H:i',
+            'customer.isAsSoonAsPossible' => 'required|string',
+            'products' => 'required|array',
+            'sum' => 'required|numeric|min:0',
+        ]);
+        $customer = collect($validatedData['customer']);
+        $customer['phone'] = $this->formatPhoneNumber($validatedData['customer']['phone']);
+        $products = collect($validatedData['products']);
         $posterOrderProducts = [];
         foreach ($products as $product) {
             $item = Product::find($product['id']);
@@ -94,7 +110,7 @@ class OrderController extends Controller
         $time = Carbon::parse('31-12-2023 ' . $customer['time']);
         $order = new LOrder();
         $order->name = $customer['name'];
-        $order->phone = $customer['phone'];
+        $order->phone = $this->formatPhoneNumber($customer['phone']);
         $order->address = $customer['address'];
         $order->time = $time->toDateTime();
         $order->sum = $sum;
@@ -105,5 +121,17 @@ class OrderController extends Controller
         return new JsonResponse([
             'data' => $order
         ]);
+    }
+    private function formatPhoneNumber($phone_number): string
+    {
+        $phone = preg_replace('/\D/', '', $phone_number);
+        if (str_starts_with($phone, '380')) {
+            $phone = '380' . substr($phone, 3);
+        } elseif (str_starts_with($phone, '0')) {
+            $phone = '380' . substr($phone, 1);
+        } else {
+            $phone = '380' . $phone;
+        }
+        return $phone;
     }
 }
