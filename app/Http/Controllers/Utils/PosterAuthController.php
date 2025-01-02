@@ -45,21 +45,24 @@ class PosterAuthController extends Controller
 
     public function getMenu()
     {
+        dd('nope');
         $url = 'https://joinposter.com/api/menu.getCategories'
             . '?token=' . $this->token
-            . '&fiscal=0';
+            . '&fiscal=1';
 
         $data = $this->sendRequest($url);
-        dd($data);
+//        dd($data);
         $categories_id = [3, 5, 7, 15, 18];
 
+        $selected_categories = [];
         foreach ($data['response'] as $item) {
             if (in_array(intval($item['category_id']), $categories_id)) {
                 $selected_categories[] = $item;
             }
         }
-
-        dd($selected_categories);
+//        dd($selected_categories);
+        $cat = Category::getEnableCategories();
+        dd($cat);
 
     }
 
@@ -93,7 +96,7 @@ class PosterAuthController extends Controller
 
     public function getProducts(Request $request)
     {
-        $categories_id = [3 => 5, 5 => 1, 7 => 3, 15 => 4, 18 => 6];
+        $categories_id = [3 => 5, 5 => 1, 7 => 3, 15 => 4, 18 => 6, 26 => 8];
 
         foreach ($categories_id as $key => $category_id) {
             $category_site_id = $category_id;
