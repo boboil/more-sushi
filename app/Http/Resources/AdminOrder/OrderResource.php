@@ -22,6 +22,7 @@ class OrderResource extends JsonResource
         return [
             'id' => $this->id,
             'sum_product' => $this->sum_product,
+            'sum_product_without_sets' => $this->sum_product_without_sets,
             'order_time' => $this->order_time ? (new Carbon($this->order_time))->format('F d, Y H:i') : null,
             'address' => $this->address,
             'created_at' => $this->created_at,
