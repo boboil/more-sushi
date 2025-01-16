@@ -41,7 +41,10 @@ class AdminOrderController extends Controller
         $order = new AdminOrder();
         $order->address = $address;
         foreach ($rolls as $roll) {
+            $product = Product::find($roll['id']);
+            $quantity = !str_contains($product?->title, 'Сет') ? (int)$roll['quantity'] : 0;
             $order->sum_product += (int)$roll['quantity'];
+            $order->sum_product_without_sets += $quantity;
             $sync_data[$roll['id']] = ['quantity' => $roll['quantity']];
         }
         $order->order_time = $date;
@@ -161,6 +164,7 @@ class AdminOrderController extends Controller
 
         return new ProductCollection($products);
     }
+
     /**
      * @param Request $request
      *
@@ -179,7 +183,7 @@ class AdminOrderController extends Controller
 
     public function updateProduct(Request $request): bool
     {
-        $product_id =  $request->input('id');
+        $product_id = $request->input('id');
         $product = Product::where('id', $product_id)->first();
         /** @var Product $product */
         $product->title = $request->input('title');

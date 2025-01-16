@@ -23,7 +23,7 @@
                 </span>
                         </td>
                         <td>
-                            {{ countBonusRolls(order.sum_product) }}
+                            {{ countBonusRolls(order.sum_product_without_sets) }}
                         </td>
                         <td>{{ order.order_time }}</td>
                     </tr>
@@ -88,19 +88,25 @@ export default {
             return sum
         },
         countBonusInOrder() {
-            let sum = 0
-            let bonus = 0
+            let sum = 0;
+            let sum_product_without_sets = 0;
+            let bonus = 0;
+
             this.orders.forEach(order => {
-                sum += order.sum_product
-                if (order.sum_product >= 20) {
-                    bonus += 4
-                } else if (order.sum_product >= 10) {
-                    bonus += 2
-                } else if (order.sum_product >= 5) {
-                    bonus += 1
+                sum += order.sum_product;
+                sum_product_without_sets += order.sum_product_without_sets;
+                const x = order.sum_product_without_sets;
+                if (x >= 20) {
+                    bonus += 4;
+                    bonus += 2 * Math.floor((x - 20) / 10);
+                } else if (x >= 10) {
+                    bonus += 2;
+                } else if (x >= 5) {
+                    bonus += 1;
                 }
-            })
-            return sum + bonus
+            });
+
+            return sum + bonus;
         },
         countBonus() {
             return this.countBonusInOrder - this.sumTodayProducts
@@ -124,11 +130,12 @@ export default {
         countBonusRolls(sum) {
             let bonus;
             if (sum >= 20) {
-                bonus = 4
+                bonus = 4;
+                bonus += 2 * Math.floor((sum - 20) / 10);
             } else if (sum >= 10) {
-                bonus = 2
-            }else if (sum >= 5) {
-                bonus = 1
+                bonus = 2;
+            } else if (sum >= 5) {
+                bonus = 1;
             }
             if (bonus) {
                 return `${bonus} шт`
