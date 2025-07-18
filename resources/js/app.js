@@ -27,6 +27,7 @@ import IndexComponent from './components/shop/IndexComponent.vue'
 import YesterdayOrders from './components/YesterdayOrders'
 import SalaryPage from './components/SalaryPage'
 import Login from './auth/Login.vue';
+import OrdersStatus from "./components/OrdersStatus";
 
 
 const routes = [
@@ -64,6 +65,11 @@ const routes = [
         name: 'login',
         path: '/login',
         component: Login
+    },
+    {
+        name: 'currentOrders',
+        path: '/current-orders',
+        component: OrdersStatus
     },
 
 ];

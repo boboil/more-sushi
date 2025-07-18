@@ -9,6 +9,7 @@
                     <b-nav-item to="/yesterday-orders" exact exact-active-class="active">Заказы к выдаче</b-nav-item>
                     <router-link to="/login" class="nav-item nav-link" v-if="!isLoggedIn">Login</router-link>
                     <router-link to="/products" class="nav-item nav-link" v-if="isLoggedIn">Ролы</router-link>
+                    <router-link to="/current-orders" class="nav-item nav-link" v-if="isLoggedIn">Текущие заказы</router-link>
                     <a href="/admin" class="nav-item nav-link" v-if="isLoggedIn">Admin Panel</a>
                 </b-nav>
             </b-card-header>
