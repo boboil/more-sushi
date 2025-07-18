@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\SalaryController;
+use App\Http\Controllers\Shop\DeliveryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminOrderController;
@@ -43,10 +44,12 @@ Route::delete('admin-remove-product/{product_id}', [AdminOrderController::class,
 Route::get('products', [AdminOrderController::class, 'getProducts']);
 Route::post('get-employees-working-hours', [SalaryController::class, 'getEmployeesWorkingHours']);
 Route::post('get-working-hours-by-day', [SalaryController::class, 'getWorkingHoursByDay']);
+Route::get('get-status-orders', [\App\Http\Controllers\Api\OrderController::class, 'statusOrdersSpots'])->name('statusOrdersSpots');
 
 Route::prefix('shop')->group(function () {
     Route::get('product/{slug}', [ProductController::class, 'show']);
     Route::get('catalog', [CategoryController::class, 'index']);
+    Route::get('delivery-cost', [DeliveryController::class, 'getDeliveryApiCost']);
     Route::get('stock', [CategoryController::class, 'stock']);
     Route::get('related-products', [ProductController::class, 'getRelatedProducts']);
     Route::post('add-order', [OrderController::class, 'addOrder']);

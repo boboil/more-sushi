@@ -67,7 +67,12 @@ return [
                 ->setPriority(4)
                 ->setIcon('fa fa-question-circle')
                 ->setUrl('admin/questions')
-                ->setTitle('Зворотній звʼязок')
+                ->setTitle('Зворотній звʼязок'),
+            [
+                'title' => 'Доставка',
+                'icon' => 'fa fa-shopping-cart',
+                'url' => route('admin.delivery'),
+            ],
         ]
     ],
 

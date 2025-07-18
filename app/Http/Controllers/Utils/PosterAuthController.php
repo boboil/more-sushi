@@ -215,4 +215,13 @@ class PosterAuthController extends Controller
         return json_decode($output, true);
     }
 
+
+    public function getOrders()
+    {
+        $today = Carbon::today()->format('Ymd');
+        $url = 'https://joinposter.com/api/dash.getTransactions'
+            . '?token=' . $this->token.'&status=1&dateFrom='.$today.'&date_to='.$today.'&include_products=true';
+        return $this->sendRequest($url);
+    }
+
 }
