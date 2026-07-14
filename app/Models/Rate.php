@@ -25,6 +25,10 @@ class Rate extends Model
 
     protected $table = 'rates';
 
+    protected $fillable = ['rate', 'working_date', 'role_id'];
+
+    protected $casts = ['working_date' => 'date'];
+
 
     public function role(): BelongsTo
     {

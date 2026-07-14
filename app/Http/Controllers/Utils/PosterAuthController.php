@@ -137,7 +137,7 @@ class PosterAuthController extends Controller
                 }
             }
         }
-        dd($data);
+        return response()->json(['status' => 'ok']);
     }
 
     public function trasformIngridients($data)

@@ -38,6 +38,28 @@ class Product extends Model
 
     protected $table = 'product_shop';
 
+    protected $fillable = [
+        'title', 'price', 'discount', 'count', 'weight', 'consist', 'stock',
+        'latest', 'main_image', 'images', 'description', 'slug', 'isRelated',
+        'isActive', 'for_landing', 'poster_id',
+    ];
+
+    protected $casts = [
+        'images' => 'array',
+        'stock' => 'boolean',
+        'latest' => 'boolean',
+        'isRelated' => 'boolean',
+        'isActive' => 'boolean',
+        'for_landing' => 'boolean',
+    ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (Product $product): void {
+            $product->slug = Str::slug($product->title);
+        });
+    }
+
     public static function getProductsBySlug($slug)
     {
         return self::where('slug', $slug)->first();

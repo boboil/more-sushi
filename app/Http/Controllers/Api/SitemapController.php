@@ -11,7 +11,7 @@ class SitemapController extends Controller
 {
     public function index()
     {
-        $date = Carbon::now()->setTimezone('Europe/Kiev')->toIso8601String();
+        $date = Carbon::now()->setTimezone('Europe/Kyiv')->toIso8601String();
         $sitemap = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
         $sitemap .= '<url>
                         <loc>https://moresushi.in.ua/</loc>

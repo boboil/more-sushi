@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
@@ -27,7 +29,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property Collection|WorkingHours[] $workingDays The user associated with the working hours.
  * @property Collection|Role[] $roles The user associated with the roles.
  */
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
@@ -40,6 +42,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'rate',
+        'poster_user_id',
     ];
 
     /**
@@ -64,6 +68,11 @@ class User extends Authenticatable
     public function isSuperAdmin(): bool
     {
         return $this->hasRole('admin');
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->isSuperAdmin() || $this->isManager();
     }
 
     /**
