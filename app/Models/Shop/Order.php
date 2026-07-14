@@ -13,6 +13,17 @@ class Order extends Model
 
     protected $table = 'shop_order';
 
+    protected $fillable = [
+        'customer_name', 'customer_phone', 'customer_delivery_type', 'customer_street',
+        'customer_building', 'online_payment', 'sticks_educational', 'sticks_standard',
+        'is_as_soon_as_possible', 'time', 'sum',
+    ];
+
+    protected $casts = [
+        'is_as_soon_as_possible' => 'boolean',
+        'time' => 'datetime',
+    ];
+
     public function products()
     {
         return $this->belongsToMany(

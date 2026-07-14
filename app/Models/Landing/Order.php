@@ -13,6 +13,13 @@ class Order extends Model
 
     protected $table = 'l_orders';
 
+    protected $fillable = ['name', 'phone', 'address', 'time', 'sum', 'self_pickup'];
+
+    protected $casts = [
+        'time' => 'datetime',
+        'self_pickup' => 'boolean',
+    ];
+
     public function products()
     {
         return $this->belongsToMany(

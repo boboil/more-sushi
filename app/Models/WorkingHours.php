@@ -32,6 +32,8 @@ class WorkingHours extends Model
         'hours',
     ];
 
+    protected $casts = ['working_day' => 'date'];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

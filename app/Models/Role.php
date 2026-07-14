@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Role extends Model
 {
+    protected $fillable = ['name', 'label'];
+
     public function permissions(): BelongsToMany
     {
         return $this->belongsToMany(Permission::class);
