@@ -11,6 +11,7 @@ use \App\Http\Controllers\Shop\ProductController;
 use \App\Http\Controllers\Shop\CategoryController;
 use \App\Http\Controllers\Shop\OrderController;
 use \App\Http\Controllers\Shop\QuestionController;
+use \App\Http\Controllers\Shop\HeroSlideController;
 
 /*
 |--------------------------------------------------------------------------
@@ -50,6 +51,7 @@ Route::prefix('shop')->group(function () {
     Route::get('product/{slug}', [ProductController::class, 'show']);
     Route::get('catalog', [CategoryController::class, 'index']);
     Route::get('delivery-cost', [DeliveryController::class, 'getDeliveryApiCost']);
+    Route::get('hero-slides', [HeroSlideController::class, 'index']);
     Route::get('stock', [CategoryController::class, 'stock']);
     Route::get('related-products', [ProductController::class, 'getRelatedProducts']);
     Route::post('add-order', [OrderController::class, 'addOrder']);
