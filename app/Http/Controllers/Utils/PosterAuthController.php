@@ -79,6 +79,9 @@ class PosterAuthController extends Controller
         if (in_array($extension, $availableExt)) {
             $img = Image::make('images/products/' . $filename);
             $path = 'images/products/converted/' . $img->filename . '.webp';
+            if (!is_dir(dirname(public_path($path)))) {
+                mkdir(dirname(public_path($path)), 0775, true);
+            }
             $width = $img->width();
             if ($width > 600) {
                 $img->resize(600, 600, function ($constraint) {

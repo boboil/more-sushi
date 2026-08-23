@@ -50,6 +50,9 @@ class ProductController extends Controller
             $webpImage = Image::make($product->main_image)
                 ->encode('webp', 90);
             $webpPath = 'images/products/converted/' . basename($webpImage->filename) . '.webp';
+            if (!is_dir(dirname(public_path($webpPath)))) {
+                mkdir(dirname(public_path($webpPath)), 0775, true);
+            }
             $webpImage->resize(600, 600, function ($constraint) {
                 $constraint->aspectRatio();
                 $constraint->upsize();
