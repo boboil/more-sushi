@@ -30,6 +30,7 @@ use Illuminate\Support\Str;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Collection|Category $category The category associated with the product.
+ * @property Collection|Tag[] $tags Фільтри товару
  *
  */
 class Product extends Model
@@ -75,6 +76,11 @@ class Product extends Model
     public function category()
     {
         return $this->belongsToMany(Category::class, 'category_product_shop');
+    }
+
+    public function tags()
+    {
+        return $this->belongsToMany(Tag::class, 'product_shop_tag', 'product_id', 'tag_id');
     }
 
     public static function getRelatedProducts() {

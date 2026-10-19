@@ -47,7 +47,7 @@ class Category extends Model
 
     public static function getEnableCategories()
     {
-        return self::where('enable', 1)->get();
+        return self::where('enable', 1)->with(['products.tags', 'products.category'])->get();
     }
     public static function getStockCategories()
     {

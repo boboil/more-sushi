@@ -35,7 +35,8 @@ class ProductResource extends JsonResource
             'images' => $this->images,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'category' => $this->category
+            'category' => $this->category,
+            'tags' => $this->tags->where('enable', true)->pluck('slug')->values(),
             ];
     }
 }

@@ -6,6 +6,7 @@ use App\Filament\Resources\Shop\Products\Pages\CreateProduct;
 use App\Filament\Resources\Shop\Products\Pages\EditProduct;
 use App\Filament\Resources\Shop\Products\Pages\ListProducts;
 use App\Models\Shop\Product;
+use App\Models\Shop\Tag;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\BulkAction;
@@ -23,6 +24,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Collection;
 use UnitEnum;
@@ -57,6 +59,16 @@ class ProductResource extends Resource
                         TextInput::make('count')->label('Кількість, шт.')->numeric()->required(),
                         Select::make('category')->label('Категорії')->relationship('category', 'title')->multiple()->preload()->searchable(),
                     ]),
+                    Select::make('tags')->label('Фільтри')
+                        ->relationship('tags', 'title', fn ($query) => $query->orderBy('sort_order'))
+                        ->multiple()->preload()->searchable()
+                        ->helperText('За ними відвідувачі фільтрують меню: Гостре, Лосось…')
+                        ->createOptionForm([
+                            TextInput::make('title')->label('Назва')->required()->maxLength(255),
+                            TextInput::make('slug')->label('Код для посилання')->maxLength(255)
+                                ->helperText('Латиницею; якщо порожньо — згенерується з назви'),
+                        ])
+                        ->columnSpanFull(),
                     FileUpload::make('images')->label('Зображення товару')->image()->multiple()->disk('public_root')->directory('images/uploads')->visibility('public')->columnSpanFull(),
                     RichEditor::make('consist')->label('Склад')->columnSpanFull(),
                     RichEditor::make('description')->label('Опис')->columnSpanFull(),
@@ -82,6 +94,7 @@ class ProductResource extends Resource
                 TextColumn::make('price')->label('Ціна')->numeric(),
                 TextColumn::make('discount')->label('Знижка')->numeric(),
                 ImageColumn::make('main_image')->label('Зображення')->disk('public_root'),
+                TextColumn::make('tags.title')->label('Фільтри')->badge()->toggleable(),
                 ToggleColumn::make('stock')->label('Акція'),
                 ToggleColumn::make('latest')->label('Новинка'),
                 ToggleColumn::make('isRelated')->label('Супутній'),
@@ -89,13 +102,32 @@ class ProductResource extends Resource
                 ToggleColumn::make('for_landing')->label('На лендінгу'),
             ])
             ->filters([
-                //
+                SelectFilter::make('tags')->label('Фільтр')->relationship('tags', 'title')->multiple()->preload(),
+                SelectFilter::make('category')->label('Категорія')->relationship('category', 'title')->multiple()->preload(),
             ])
             ->recordActions([
                 EditAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
+                    BulkAction::make('attachTags')
+                        ->label('Додати фільтри')
+                        ->icon(Heroicon::OutlinedFunnel)
+                        ->schema([
+                            Select::make('tag_ids')->label('Фільтри')->multiple()->required()
+                                ->options(fn () => Tag::orderBy('sort_order')->pluck('title', 'id')),
+                        ])
+                        ->action(fn (Collection $records, array $data) => $records->each(fn (Product $p) => $p->tags()->syncWithoutDetaching($data['tag_ids'])))
+                        ->deselectRecordsAfterCompletion(),
+                    BulkAction::make('detachTags')
+                        ->label('Прибрати фільтри')
+                        ->icon(Heroicon::OutlinedXMark)
+                        ->schema([
+                            Select::make('tag_ids')->label('Фільтри')->multiple()->required()
+                                ->options(fn () => Tag::orderBy('sort_order')->pluck('title', 'id')),
+                        ])
+                        ->action(fn (Collection $records, array $data) => $records->each(fn (Product $p) => $p->tags()->detach($data['tag_ids'])))
+                        ->deselectRecordsAfterCompletion(),
                     BulkAction::make('deleteSelected')
                         ->label('Видалити обрані')
                         ->icon(Heroicon::Trash)
