@@ -52,7 +52,7 @@ class PosterAuthController extends Controller
 
         $data = $this->sendRequest($url);
 //        dd($data);
-        $categories_id = [3, 5, 7, 15, 18];
+        $categories_id = [3, 5, 7, 15, 18, 23];
 
         $selected_categories = [];
         foreach ($data['response'] as $item) {
@@ -99,7 +99,8 @@ class PosterAuthController extends Controller
 
     public function getProducts(Request $request)
     {
-        $categories_id = [3 => 5, 5 => 1, 7 => 3, 15 => 4, 18 => 6, 26 => 8];
+        //todo key is poster category id value is site category id
+        $categories_id = [3 => 5, 5 => 1, 7 => 3, 15 => 4, 18 => 6, 26 => 8, 23 => 7];
 
         foreach ($categories_id as $key => $category_id) {
             $category_site_id = $category_id;

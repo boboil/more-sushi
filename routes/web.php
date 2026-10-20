@@ -25,6 +25,7 @@ Route::get('/admin/status-orders', function (PosterAuthController $poster) {
 
     return view('orders', compact('data'));
 })->middleware('auth')->name('admin.orders.status');
+Route::get('get-menu', [PosterAuthController::class, 'getMenu']);
 Route::get('/{any}', [AppController::class, 'index'])
     ->where('any', '^(?!admin(?:/|$)).*');
 
