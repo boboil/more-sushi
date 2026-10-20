@@ -31,6 +31,8 @@ class ProductResource extends JsonResource
             'consist' => $this->consist,
             'stock' => $this->stock,
             'latest' => $this->latest,
+            'featured' => (bool) $this->featured,
+            'featured_sort' => (int) $this->featured_sort,
             'main_image' => asset($this->main_image),
             'images' => $this->images,
             'created_at' => $this->created_at,

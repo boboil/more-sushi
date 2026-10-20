@@ -19,12 +19,14 @@ use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Collection;
 use UnitEnum;
@@ -80,6 +82,14 @@ class ProductResource extends Resource
                     Toggle::make('isActive')->label('Відображати на сайті'),
                     Toggle::make('for_landing')->label('Відображати на лендінгу'),
                 ])->columns(5)->columnSpanFull(),
+                Section::make('Головний банер')
+                    ->description('Товари, які показуються в каруселі на першому екрані сайту')
+                    ->schema([
+                        Toggle::make('featured')->label('Показувати в головному банері')->live(),
+                        TextInput::make('featured_sort')->label('Порядок у банері')->numeric()->minValue(0)->default(0)
+                            ->helperText('Менше число — раніше в каруселі')
+                            ->visible(fn (Get $get) => (bool) $get('featured')),
+                    ])->columns(2)->columnSpanFull(),
             ]);
     }
 
@@ -100,10 +110,12 @@ class ProductResource extends Resource
                 ToggleColumn::make('isRelated')->label('Супутній'),
                 ToggleColumn::make('isActive')->label('На сайті'),
                 ToggleColumn::make('for_landing')->label('На лендінгу'),
+                ToggleColumn::make('featured')->label('Головний банер'),
             ])
             ->filters([
                 SelectFilter::make('tags')->label('Фільтр')->relationship('tags', 'title')->multiple()->preload(),
                 SelectFilter::make('category')->label('Категорія')->relationship('category', 'title')->multiple()->preload(),
+                TernaryFilter::make('featured')->label('Головний банер'),
             ])
             ->recordActions([
                 EditAction::make(),

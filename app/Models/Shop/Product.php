@@ -27,6 +27,8 @@ use Illuminate\Support\Str;
  * @property int $weight
  * @property boolean $isRelated
  * @property boolean $latest
+ * @property boolean $featured Показувати в головному банері
+ * @property int $featured_sort Порядок у головному банері
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Collection|Category $category The category associated with the product.
@@ -42,7 +44,7 @@ class Product extends Model
     protected $fillable = [
         'title', 'price', 'discount', 'count', 'weight', 'consist', 'stock',
         'latest', 'main_image', 'images', 'description', 'slug', 'isRelated',
-        'isActive', 'for_landing', 'poster_id',
+        'isActive', 'for_landing', 'poster_id', 'featured', 'featured_sort',
     ];
 
     protected $casts = [
@@ -52,6 +54,8 @@ class Product extends Model
         'isRelated' => 'boolean',
         'isActive' => 'boolean',
         'for_landing' => 'boolean',
+        'featured' => 'boolean',
+        'featured_sort' => 'integer',
     ];
 
     protected static function booted(): void
