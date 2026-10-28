@@ -31,4 +31,20 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'gemini' => [
+        'key' => env('GEMINI_API_KEY'),
+        'video_model' => env('GEMINI_VIDEO_MODEL', 'gemini-omni-1.1-flash'),
+        // Ціни Standard tier, USD за 1M токенів (ai.google.dev/gemini-api/docs/pricing, 28.10.2026).
+        'prices' => [
+            'input' => (float) env('GEMINI_PRICE_INPUT', 1.50),
+            'output_video' => (float) env('GEMINI_PRICE_OUTPUT_VIDEO', 17.50),
+            'output_text' => (float) env('GEMINI_PRICE_OUTPUT_TEXT', 9.00),
+        ],
+    ],
+
+    'ffmpeg' => [
+        'ffmpeg' => env('FFMPEG_BIN', 'ffmpeg'),
+        'ffprobe' => env('FFPROBE_BIN', 'ffprobe'),
+    ],
+
 ];
