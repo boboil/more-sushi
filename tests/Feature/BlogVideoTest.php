@@ -5,12 +5,14 @@ namespace Tests\Feature;
 use App\Filament\Resources\Blog\VideoReels\Pages\EditVideoReel;
 use App\Filament\Resources\Blog\VideoScenarios\Pages\CreateVideoScenario;
 use App\Filament\Resources\Blog\VideoScenarios\Pages\EditVideoScenario;
+use App\Filament\Resources\Blog\VideoScenarios\Pages\ListVideoScenarios;
 use App\Models\Blog\VideoCharacter;
 use App\Models\Blog\VideoReel;
 use App\Models\Blog\VideoScenario;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\GeminiVideoService;
+use App\Services\VideoScenarioImporter;
 use App\Services\VideoTools;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
@@ -308,6 +310,100 @@ class BlogVideoTest extends TestCase
             ->assertNotified('Не вдалося зібрати ролик');
 
         $this->assertStringContainsString($draft->title, $reel->refresh()->error);
+    }
+
+    public function test_import_creates_scenarios_characters_and_reel(): void
+    {
+        $this->actingAs($this->createManager());
+        $marko = VideoCharacter::query()->create(['name' => 'Марко', 'description' => 'Старий опис']);
+        $json = json_encode([
+            'reel_title' => 'Перша зміна',
+            'resolution' => '360p',
+            'characters' => [
+                ['name' => 'марко', 'description' => 'New look'],
+                ['name' => 'Даня', 'description' => 'Young waiter', 'voice' => 'Calm baritone'],
+            ],
+            'scenarios' => [
+                ['title' => '01 — Привіт', 'setting' => 'Kitchen', 'lines' => [
+                    ['character' => 'Марко', 'direction' => 'smiles', 'text' => 'Привіт!'],
+                    ['character' => 'Даня', 'direction' => 'nods', 'text' => null],
+                ]],
+                ['title' => '02 — Рол', 'aspect_ratio' => '16:9', 'lines' => [['character' => 'Шеф', 'text' => 'Готово!']]],
+            ],
+        ], JSON_UNESCAPED_UNICODE);
+
+        Livewire::test(ListVideoScenarios::class)
+            ->mountAction('import')
+            ->set('mountedActions.0.data.json', "Ось сценарій:\n```json\n{$json}\n```")
+            ->callMountedAction()
+            ->assertNotified('Імпортовано сценаріїв: 2');
+
+        $this->assertSame('Старий опис', $marko->refresh()->description);
+        $this->assertSame(3, VideoCharacter::query()->count());
+        $dania = VideoCharacter::query()->where('name', 'Даня')->firstOrFail();
+        $this->assertSame('Calm baritone', $dania->voice);
+
+        $first = VideoScenario::query()->where('title', '01 — Привіт')->firstOrFail();
+        $this->assertSame('360p', $first->resolution);
+        $this->assertSame('9:16', $first->aspect_ratio);
+        $this->assertSame([$marko->id, $dania->id], array_column($first->lines, 'character_id'));
+        $this->assertNull($first->lines[1]['text']);
+        $this->assertSame('16:9', VideoScenario::query()->where('title', '02 — Рол')->value('aspect_ratio'));
+
+        $reel = VideoReel::query()->where('title', 'Перша зміна')->firstOrFail();
+        $this->assertCount(2, $reel->scenarios());
+    }
+
+    public function test_import_can_update_existing_characters(): void
+    {
+        $marko = VideoCharacter::query()->create(['name' => 'Марко', 'description' => 'Старий опис']);
+
+        app(VideoScenarioImporter::class)->import([
+            'characters' => [['name' => 'Марко', 'description' => 'New look']],
+            'scenarios' => [['title' => 'Один', 'lines' => [['character' => 'Марко', 'text' => 'Так']]]],
+        ], updateCharacters: true);
+
+        $this->assertSame('New look', $marko->refresh()->description);
+    }
+
+    public function test_import_accepts_single_scenario_without_wrapper(): void
+    {
+        $data = app(VideoScenarioImporter::class)->parse('{"title": "Соло", "lines": [{"character": "Аня", "text": "Смачно"}]}');
+
+        $result = app(VideoScenarioImporter::class)->import($data);
+
+        $this->assertSame('Соло', $result['scenarios']->first()->title);
+        $this->assertNull($result['reel']);
+    }
+
+    public function test_invalid_import_creates_nothing(): void
+    {
+        $this->actingAs($this->createManager());
+
+        Livewire::test(ListVideoScenarios::class)
+            ->mountAction('import')
+            ->set('mountedActions.0.data.json', '{"scenarios": [{"title": "Без реплік", "lines": []}]}')
+            ->callMountedAction()
+            ->assertNotified('Не вдалося імпортувати');
+
+        $this->assertSame(0, VideoScenario::query()->count());
+        $this->assertSame(0, VideoCharacter::query()->count());
+    }
+
+    public function test_chatgpt_prompt_lists_existing_characters(): void
+    {
+        VideoCharacter::query()->create(['name' => 'Марко', 'voice' => 'Low, warm']);
+
+        $prompt = app(VideoScenarioImporter::class)->chatGptPrompt();
+
+        $this->assertStringContainsString("- Марко\n  Голос: Low, warm", $prompt);
+        $this->assertStringNotContainsString('{{characters}}', $prompt);
+        $this->assertStringContainsString('"scenarios"', $prompt);
+
+        $this->actingAs($this->createManager());
+        Livewire::test(ListVideoScenarios::class)
+            ->callAction('chatGptPrompt')
+            ->assertFileDownloaded('chatgpt-video-prompt.md');
     }
 
     private function createFinishedScenario(int $seconds): VideoScenario

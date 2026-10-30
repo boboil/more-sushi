@@ -1,0 +1,29 @@
+{
+  "reel_title": "Марко вчить Даню крутити рол",
+  "language": "українська",
+  "aspect_ratio": "9:16",
+  "resolution": "360p",
+  "characters": [],
+  "scenarios": [
+    {
+      "title": "01 — Перший рол",
+      "setting": "Restaurant kitchen in the evening, steel counter with a bamboo mat, nori and a bowl of rice. Marko shows Danya how to spread rice on nori.",
+      "style": "Warm tungsten light, handheld medium shot, slow push-in, soft kitchen ambience, no music",
+      "lines": [
+        { "character": "Марко", "direction": "spreads rice with wet fingers", "text": "Рис — тонким шаром, не тисни." },
+        { "character": "Даня", "direction": "nods, concentrated", "text": "Отак?" }
+      ],
+      "extra_instructions": null
+    },
+    {
+      "title": "02 — Нарізка",
+      "setting": "Same kitchen counter. Danya slices the finished roll into six pieces with a long knife.",
+      "style": "Close-up on hands, then tilt up to faces, warm light, soft kitchen ambience",
+      "lines": [
+        { "character": "Даня", "direction": "slices carefully", "text": "Шість рівних шматочків!" },
+        { "character": "Марко", "direction": "smiles and gives a thumbs up", "text": null }
+      ],
+      "extra_instructions": null
+    }
+  ]
+}
