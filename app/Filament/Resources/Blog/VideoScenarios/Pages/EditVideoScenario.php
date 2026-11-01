@@ -4,13 +4,17 @@ namespace App\Filament\Resources\Blog\VideoScenarios\Pages;
 
 use App\Filament\Resources\Blog\VideoScenarios\VideoScenarioResource;
 use App\Models\Blog\VideoScenario;
+use App\Services\FlowVideoExporter;
 use App\Services\GeminiVideoService;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -70,6 +74,48 @@ class EditVideoScenario extends EditRecord
                         Notification::make()->danger()->title('Gemini відхилив запит')->body($e->getMessage())->persistent()->send();
                     }
                 }),
+            ActionGroup::make([
+                Action::make('exportFlow')
+                    ->label('Експорт для Flow')
+                    ->icon('heroicon-o-archive-box-arrow-down')
+                    ->action(function (FlowVideoExporter $flow) {
+                        $this->save(shouldRedirect: false, shouldSendSavedNotification: false);
+
+                        try {
+                            $zip = $flow->export($this->record);
+                        } catch (Throwable $e) {
+                            report($e);
+                            Notification::make()->danger()->title('Не вдалося зібрати архів')->body($e->getMessage())->send();
+
+                            return null;
+                        }
+
+                        return response()->download($zip, 'flow-' . $this->record->id . '-' . Str::slug($this->record->title) . '.zip')->deleteFileAfterSend();
+                    }),
+                Action::make('uploadFlowVideo')
+                    ->label('Завантажити відео з Flow')
+                    ->icon('heroicon-o-arrow-up-tray')
+                    ->disabled(fn () => $this->record->isProcessing())
+                    ->modalHeading('Завантажити готове відео')
+                    ->modalDescription(fn () => 'mp4, скачаний з Google Flow, стане відео цього сценарію: його можна дивитись тут і додавати в ролики.'
+                        . ($this->record->video_path ? ' Поточне відео буде замінено.' : ''))
+                    ->modalSubmitActionLabel('Завантажити')
+                    ->schema([
+                        FileUpload::make('video')->label('Відео (mp4)')->required()
+                            ->acceptedFileTypes(['video/mp4', 'video/quicktime'])->maxSize(100 * 1024)
+                            ->disk('public_root')->directory(GeminiVideoService::VIDEO_DIRECTORY)->visibility('public')
+                            ->getUploadedFileNameForStorageUsing(fn ($file) => $this->record->id . '-' . now()->format('Ymd-His') . '-flow.' . ($file->guessExtension() ?: 'mp4')),
+                    ])
+                    ->action(function (array $data, FlowVideoExporter $flow): void {
+                        try {
+                            $flow->attach($this->record, $data['video']);
+                            Notification::make()->success()->title('Відео завантажено')->send();
+                        } catch (Throwable $e) {
+                            report($e);
+                            Notification::make()->danger()->title('Не вдалося зберегти відео')->body($e->getMessage())->send();
+                        }
+                    }),
+            ])->label('Google Flow')->icon('heroicon-o-film')->color('gray')->button(),
             Action::make('checkStatus')
                 ->label('Перевірити статус')
                 ->icon('heroicon-o-arrow-path')

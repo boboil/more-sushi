@@ -11,11 +11,13 @@ use App\Models\Blog\VideoReel;
 use App\Models\Blog\VideoScenario;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\FlowVideoExporter;
 use App\Services\GeminiVideoService;
 use App\Services\VideoScenarioImporter;
 use App\Services\VideoTools;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
@@ -404,6 +406,68 @@ class BlogVideoTest extends TestCase
         Livewire::test(ListVideoScenarios::class)
             ->callAction('chatGptPrompt')
             ->assertFileDownloaded('chatgpt-video-prompt.md');
+    }
+
+    public function test_flow_export_contains_prompt_and_numbered_images(): void
+    {
+        $scenario = $this->createScenario();
+
+        ['prompt' => $prompt, 'images' => $images] = app(FlowVideoExporter::class)->prepare($scenario);
+
+        $this->assertStringContainsString('Аня — looks exactly like the person in image 1', $prompt);
+        $this->assertStringContainsString('Use image 2 as reference for the location', $prompt);
+        $this->assertStringNotContainsString('IMAGE_REF', $prompt);
+        $this->assertSame(['1-ania.jpg', '2-scene.jpg'], array_column($images, 'file'));
+
+        $zip = new \ZipArchive();
+        $zip->open(app(FlowVideoExporter::class)->export($scenario));
+        $this->assertSame($prompt, $zip->getFromName('prompt.txt'));
+        $this->assertNotFalse($zip->getFromName('1-ania.jpg'));
+        $this->assertStringContainsString('2-scene.jpg — референс сцени', $zip->getFromName('README.txt'));
+        $zip->close();
+
+        $this->actingAs($this->createManager());
+        Livewire::test(EditVideoScenario::class, ['record' => $scenario->getKey()])
+            ->callAction('exportFlow')
+            ->assertFileDownloaded();
+    }
+
+    public function test_flow_export_uses_start_frame_as_image_one(): void
+    {
+        $scenario = $this->createScenario();
+        Storage::disk('public_root')->put('blog-video/references/frame.png', 'PNG');
+        $scenario->update(['start_frame' => 'blog-video/references/frame.png']);
+
+        ['prompt' => $prompt, 'images' => $images] = app(FlowVideoExporter::class)->prepare($scenario);
+
+        $this->assertStringContainsString('Use image 1 as the exact first frame', $prompt);
+        $this->assertSame(['1-start-frame.png', '2-scene.jpg'], array_column($images, 'file'));
+    }
+
+    public function test_uploaded_flow_video_becomes_scenario_result(): void
+    {
+        $this->actingAs($this->createManager());
+        $scenario = $this->createFinishedScenario(2);
+        $old = $scenario->video_path;
+        $file = UploadedFile::fake()->createWithContent('flow.mp4', $this->hasFfmpeg() ? $this->makeClip(3) : 'MP4');
+
+        Livewire::test(EditVideoScenario::class, ['record' => $scenario->getKey()])
+            ->mountAction('uploadFlowVideo')
+            ->set('mountedActions.0.data.video', $file)
+            ->callMountedAction()
+            ->assertHasNoErrors()
+            ->assertNotified('Відео завантажено');
+
+        $scenario->refresh();
+        $this->assertSame(VideoScenario::STATUS_DONE, $scenario->status);
+        $this->assertNotSame($old, $scenario->video_path);
+        $this->assertStringEndsWith('-flow.mp4', $scenario->video_path);
+        Storage::disk('public_root')->assertExists($scenario->video_path);
+        $this->assertNull($scenario->interaction_id);
+        $this->assertFalse($scenario->canBeExtended());
+        if ($this->hasFfmpeg()) {
+            $this->assertEqualsWithDelta(3, $scenario->duration, 0.3);
+        }
     }
 
     private function createFinishedScenario(int $seconds): VideoScenario

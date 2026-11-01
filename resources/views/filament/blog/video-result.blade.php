@@ -32,7 +32,7 @@
             style="border-radius: 0.5rem; background: #000; {{ $record->aspect_ratio === '9:16' ? 'max-height: 70vh; max-width: 100%;' : 'width: 100%; max-width: 48rem;' }}"
         ></video>
         <p style="opacity: 0.6;">
-            Згенеровано {{ $record->generated_at?->format('d.m.Y H:i') }}
+            {{ $record->interaction_id ? 'Згенеровано' : 'Завантажено з Google Flow' }} {{ $record->generated_at?->format('d.m.Y H:i') }}
             @if ($record->duration)
                 · {{ number_format($record->duration, 1) }} с з {{ VideoScenario::MAX_DURATION }} можливих
             @endif
