@@ -113,9 +113,10 @@ class BlogVideoTest extends TestCase
 
         Http::assertSent(function (Request $request) {
             return $request->hasHeader('x-goog-api-key', 'test-key')
-                && $request['model'] === 'gemini-omni-1.1-flash'
+                && $request['model'] === 'gemini-omni-1.2-flash'
                 && $request['background'] === true
                 && $request['response_format']['aspect_ratio'] === '9:16'
+                && $request['response_format']['duration'] === '10s'
                 && $request['response_format']['delivery'] === 'uri'
                 && count($request['input']) === 3
                 && $request['input'][0]['type'] === 'image'
@@ -176,7 +177,7 @@ class BlogVideoTest extends TestCase
             'output_tokens_by_modality' => [['modality' => 'video', 'tokens' => 15448]],
             'total_thought_tokens' => 310,
         ];
-        $this->assertSame(0.2754, app(GeminiVideoService::class)->cost($usage));
+        $this->assertSame(0.1905, app(GeminiVideoService::class)->cost($usage));
 
         $scenario = $this->createScenario();
         $scenario->forceFill(['status' => VideoScenario::STATUS_PROCESSING, 'interaction_id' => 'v1_abc', 'cost' => 0.5])->save();
@@ -188,8 +189,8 @@ class BlogVideoTest extends TestCase
 
         app(GeminiVideoService::class)->refresh($scenario);
 
-        $this->assertSame(0.2754, $scenario->last_cost);
-        $this->assertSame(0.7754, $scenario->cost);
+        $this->assertSame(0.1905, $scenario->last_cost);
+        $this->assertSame(0.6905, $scenario->cost);
         $this->assertSame(1534, $scenario->last_usage['total_input_tokens']);
     }
 
@@ -226,10 +227,60 @@ class BlogVideoTest extends TestCase
         $this->assertCount(1, $scenario->extensions);
 
         Http::assertSent(fn (Request $request) => $request['previous_interaction_id'] === 'v1_base'
+            && $request['response_format']['duration'] === '10s'
             && count($request['input']) === 1
             && str_contains($request['input'][0]['text'], 'Extend this video')
             && str_contains($request['input'][0]['text'], 'Аня (нарізає рол): "А тепер нарізаємо!"')
             && str_contains($request['input'][0]['text'], 'She slices the roll.'));
+    }
+
+    public function test_extension_fits_into_total_duration_limit(): void
+    {
+        $scenario = $this->createFinishedScenario(2);
+        $scenario->forceFill(['duration' => 24.5])->save();
+        Http::fake([self::API . '/interactions' => Http::response(['id' => 'v1_ext', 'status' => 'in_progress'])]);
+
+        app(GeminiVideoService::class)->extend($scenario, [['character_id' => null, 'direction' => '', 'text' => 'Далі']]);
+
+        Http::assertSent(fn (Request $request) => $request['response_format']['duration'] === '5s'
+            && str_contains($request['input'][0]['text'], 'about 5 seconds'));
+
+        $scenario->forceFill(['status' => VideoScenario::STATUS_DONE, 'duration' => 27.0])->save();
+        $this->assertTrue($scenario->canBeExtended());
+
+        $scenario->forceFill(['duration' => 27.1])->save();
+        $this->assertFalse($scenario->canBeExtended());
+    }
+
+    public function test_prompt_keeps_images_within_model_limits(): void
+    {
+        $disk = Storage::disk('public_root');
+        $photos = collect(range(1, 5))->map(function (int $number) use ($disk) {
+            $path = "blog-video/references/photo{$number}.jpg";
+            $disk->put($path, (string) Image::canvas(40, 40, '#ff8800')->encode('jpg'));
+
+            return $path;
+        })->all();
+        $characters = collect(['Аня', 'Олег', 'Марко'])
+            ->map(fn (string $name) => VideoCharacter::query()->create(['name' => $name, 'reference_images' => $photos]));
+        $lines = fn (int $count) => $characters->take($count)
+            ->map(fn (VideoCharacter $character) => ['character_id' => $character->id, 'direction' => '', 'text' => 'Привіт'])->all();
+        $service = app(GeminiVideoService::class);
+
+        $one = new VideoScenario(['title' => 'Один', 'lines' => $lines(1), 'extra_references' => $photos]);
+        $this->assertCount(6, $service->buildPrompt($one)['images']);
+        $this->assertStringContainsString('in <IMAGE_REF_0>, <IMAGE_REF_1>, <IMAGE_REF_2>' . "\n", $service->buildPrompt($one)['prompt'] . "\n");
+        $this->assertStringContainsString('Use <IMAGE_REF_3>, <IMAGE_REF_4>, <IMAGE_REF_5> as reference', $service->buildPrompt($one)['prompt']);
+
+        $two = new VideoScenario(['title' => 'Двоє', 'lines' => $lines(2), 'extra_references' => $photos]);
+        ['prompt' => $prompt, 'images' => $images] = $service->buildPrompt($two);
+        $this->assertCount(6, $images);
+        $this->assertStringNotContainsString('as reference for the location', $prompt);
+
+        $three = new VideoScenario(['title' => 'Троє', 'lines' => $lines(3)]);
+        ['prompt' => $prompt, 'images' => $images] = $service->buildPrompt($three);
+        $this->assertCount(6, $images);
+        $this->assertStringContainsString('Марко — looks exactly like the person in <IMAGE_REF_4>, <IMAGE_REF_5>', $prompt);
     }
 
     public function test_extension_segment_is_joined_to_previous_video(): void
@@ -321,6 +372,7 @@ class BlogVideoTest extends TestCase
         $json = json_encode([
             'reel_title' => 'Перша зміна',
             'resolution' => '360p',
+            'duration' => 12,
             'characters' => [
                 ['name' => 'марко', 'description' => 'New look'],
                 ['name' => 'Даня', 'description' => 'Young waiter', 'voice' => 'Calm baritone'],
@@ -330,7 +382,7 @@ class BlogVideoTest extends TestCase
                     ['character' => 'Марко', 'direction' => 'smiles', 'text' => 'Привіт!'],
                     ['character' => 'Даня', 'direction' => 'nods', 'text' => null],
                 ]],
-                ['title' => '02 — Рол', 'aspect_ratio' => '16:9', 'lines' => [['character' => 'Шеф', 'text' => 'Готово!']]],
+                ['title' => '02 — Рол', 'aspect_ratio' => '16:9', 'duration' => 15, 'lines' => [['character' => 'Шеф', 'text' => 'Готово!']]],
             ],
         ], JSON_UNESCAPED_UNICODE);
 
@@ -347,6 +399,8 @@ class BlogVideoTest extends TestCase
 
         $first = VideoScenario::query()->where('title', '01 — Привіт')->firstOrFail();
         $this->assertSame('360p', $first->resolution);
+        $this->assertSame(12, $first->clip_seconds);
+        $this->assertSame(15, VideoScenario::query()->where('title', '02 — Рол')->firstOrFail()->clip_seconds);
         $this->assertSame('9:16', $first->aspect_ratio);
         $this->assertSame([$marko->id, $dania->id], array_column($first->lines, 'character_id'));
         $this->assertNull($first->lines[1]['text']);

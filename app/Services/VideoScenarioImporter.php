@@ -87,6 +87,7 @@ class VideoScenarioImporter
                 'language' => $item['language'] ?? $data['language'] ?? 'українська',
                 'aspect_ratio' => $item['aspect_ratio'] ?? $data['aspect_ratio'] ?? '9:16',
                 'resolution' => $item['resolution'] ?? $data['resolution'] ?? '720p',
+                'clip_seconds' => $item['duration'] ?? $data['duration'] ?? VideoScenario::DEFAULT_CLIP_SECONDS,
                 'lines' => collect($item['lines'])->map(fn (array $line) => [
                     'character_id' => $resolve($line['character'])->id,
                     'direction' => $line['direction'] ?? null,
@@ -132,6 +133,7 @@ class VideoScenarioImporter
             'language' => ['nullable', 'string', 'max:50'],
             'aspect_ratio' => ['nullable', 'in:' . implode(',', self::ASPECT_RATIOS)],
             'resolution' => ['nullable', 'in:' . implode(',', self::RESOLUTIONS)],
+            'duration' => $this->durationRule(),
             'reel_title' => ['nullable', 'string', 'max:255'],
             'characters' => ['nullable', 'array'],
             'characters.*.name' => ['required', 'string', 'max:255'],
@@ -145,6 +147,7 @@ class VideoScenarioImporter
             'scenarios.*.language' => ['nullable', 'string', 'max:50'],
             'scenarios.*.aspect_ratio' => ['nullable', 'in:' . implode(',', self::ASPECT_RATIOS)],
             'scenarios.*.resolution' => ['nullable', 'in:' . implode(',', self::RESOLUTIONS)],
+            'scenarios.*.duration' => $this->durationRule(),
             'scenarios.*.lines' => ['required', 'array', 'min:1'],
             'scenarios.*.lines.*.character' => ['required', 'string', 'max:255'],
             'scenarios.*.lines.*.direction' => ['nullable', 'string', 'max:255'],
@@ -154,6 +157,11 @@ class VideoScenarioImporter
         if ($validator->fails()) {
             throw new RuntimeException("Файл не пройшов перевірку:\n" . implode("\n", $validator->errors()->all()));
         }
+    }
+
+    private function durationRule(): array
+    {
+        return ['nullable', 'integer', 'between:' . VideoScenario::MIN_CLIP_SECONDS . ',' . VideoScenario::MAX_CLIP_SECONDS];
     }
 
     private function key(string $name): string

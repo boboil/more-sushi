@@ -6,7 +6,7 @@
 
 | Что | Модель / инструмент | Где настраивается |
 |---|---|---|
-| Генерация и продление видео | **Gemini Omni 1.1 Flash** (`gemini-omni-1.1-flash`), Google Gemini API, Interactions API | `GEMINI_VIDEO_MODEL` (по умолчанию `gemini-omni-1.1-flash`) |
+| Генерация и продление видео | **Gemini Omni 1.2 Flash** (`gemini-omni-1.2-flash`), Google Gemini API, Interactions API | `GEMINI_VIDEO_MODEL` (по умолчанию `gemini-omni-1.2-flash`) |
 | Подготовка референсов | Intervention Image: ресайз до 1536 px по длинной стороне, JPEG 88, base64 | `GeminiVideoService::REFERENCE_MAX_SIDE` |
 | Длительность и склейка видео | `ffmpeg` / `ffprobe` | `FFMPEG_BIN`, `FFPROBE_BIN` |
 
@@ -16,10 +16,10 @@
 
 ```dotenv
 GEMINI_API_KEY=...                  # обязательно
-GEMINI_VIDEO_MODEL=gemini-omni-1.1-flash
-# Цены Standard tier, USD за 1M токенов (ai.google.dev/gemini-api/docs/pricing, на 28.10.2026)
+GEMINI_VIDEO_MODEL=gemini-omni-1.2-flash
+# Цены Standard tier, USD за 1M токенов (aistudio.google.com/docs/pricing, на 06.11.2026)
 GEMINI_PRICE_INPUT=1.50
-GEMINI_PRICE_OUTPUT_VIDEO=17.50
+GEMINI_PRICE_OUTPUT_VIDEO=12.00
 GEMINI_PRICE_OUTPUT_TEXT=9.00
 # Пути к ffmpeg (на проде это статическая сборка в /opt/ffmpeg)
 FFMPEG_BIN=/opt/ffmpeg/ffmpeg
@@ -32,7 +32,7 @@ FFPROBE_BIN=/opt/ffmpeg/ffprobe
 
 | Таблица / модель | Назначение |
 |---|---|
-| `blog_video_characters` / `App\Models\Blog\VideoCharacter` | Персонаж: имя, описание внешности, описание голоса, до 5 фото-референсов |
+| `blog_video_characters` / `App\Models\Blog\VideoCharacter` | Персонаж: имя, описание внешности, описание голоса, до 5 фото-референсов (в модель идут первые 3) |
 | `blog_video_scenarios` / `App\Models\Blog\VideoScenario` | Сценарий. Поля ниже |
 | `blog_video_reels` / `App\Models\Blog\VideoReel` | Ролик: склейка готовых видео нескольких сценариев в один mp4 (сценарии можно повторять) |
 
@@ -40,7 +40,7 @@ FFPROBE_BIN=/opt/ffmpeg/ffprobe
 - локация (`setting`), стиль, стартовый кадр (`start_frame`);
 - реплики (`lines`): персонаж, ремарка, текст;
 - доп. инструкции и доп. референсы;
-- язык, формат (`9:16` / `16:9`), разрешение (`360p` / `720p` / `1080p` / `4k`);
+- язык, формат (`9:16` / `16:9`), разрешение (`360p` / `720p` / `1080p` / `4k`), длительность клипа (`clip_seconds`, 3–15 с, по умолчанию 10);
 - состояние генерации, продления (`extensions`), стоимость.
 
 Статусы сценария: `draft` → `processing` → `done` / `failed`.
@@ -67,6 +67,8 @@ FFPROBE_BIN=/opt/ffmpeg/ffprobe
    - если говорит один персонаж, добавляется `Only X speaks; everyone else stays silent.`
 7. Доп. инструкции из сценария.
 
+В запрос уходит не больше 6 картинок (`VideoScenario::MAX_IMAGES`). На персонажа берётся до 3 первых фото; если персонажей с фото больше двух, лимит делится между ними поровну. Доп. референсы получают оставшиеся места, лишние картинки отбрасываются.
+
 Готовый промпт сохраняется в `last_prompt` и виден в админке («Промпт, відправлений у модель»).
 
 ### 2. Запуск задачи (`start`)
@@ -76,13 +78,14 @@ POST https://generativelanguage.googleapis.com/v1beta/interactions
 x-goog-api-key: $GEMINI_API_KEY
 
 {
-  "model": "gemini-omni-1.1-flash",
+  "model": "gemini-omni-1.2-flash",
   "background": true,
   "input": [ {картинки base64...}, {"type": "text", "text": "<промпт>"} ],
   "response_format": {
     "type": "video",
     "aspect_ratio": "9:16",
     "resolution": "720p",
+    "duration": "10s",
     "delivery": "uri"
   }
 }
@@ -104,18 +107,18 @@ x-goog-api-key: $GEMINI_API_KEY
 3. `GET /files/{file_id}`: ждём `state = ACTIVE`, затем скачиваем через `:download?alt=media`.
 4. Видео сохраняется в `public/blog-video/videos/{id}-{Ymd-His}.mp4`. Длительность определяется через `ffprobe`, статус становится `done`.
 
-Одна генерация длится около 8 секунд видео и занимает примерно 1–3 минуты ожидания.
+Одна генерация даёт клип длиной `clip_seconds` (3–15 с) и занимает примерно 1–3 минуты ожидания.
 
-### 4. Продление (`extend`): видео длиннее 8 секунд
+### 4. Продление (`extend`): видео длиннее одного клипа
 
 Готовое видео можно продлить кнопкой «Продовжити», задав новые реплики и инструкции. Условия:
 - сценарий в статусе `done`;
 - есть `interaction_id` и файл видео;
-- длительность меньше 35 с (лимит модели — `VideoScenario::MAX_DURATION = 40` с).
+- до лимита осталось хотя бы 3 с (лимит модели — `VideoScenario::MAX_DURATION = 30` с).
 
 Как проходит продление:
 - Отправляется новый `POST /interactions` с `previous_interaction_id` = текущий `interaction_id` и коротким промптом:
-  - продолжить сцену примерно на 8 секунд с теми же персонажами, голосами, светом и камерой;
+  - продолжить сцену на 3–10 секунд (`VideoScenario::extensionSeconds()`, столько же уходит в `response_format.duration`) с теми же персонажами, голосами, светом и камерой;
   - голоса персонажей и новый диалог.
 - Gemini возвращает **всё видео целиком**, вместе с продолжением. Если новый файл длиннее старого больше чем на 1 с, он просто заменяет старый. Если вернулся только новый кусок, он склеивается со старым через ffmpeg (`*-joined.mp4`).
 - Если продление не удалось, сценарий возвращается к прежнему видео и прежнему `interaction_id` (статус `done`, ошибка показывается отдельно).
@@ -133,7 +136,7 @@ x-goog-api-key: $GEMINI_API_KEY
 
 На странице «Сценарії відео» есть две кнопки.
 
-1. **«Промпт для ChatGPT»** скачивает `chatgpt-video-prompt.md`. Это шаблон `resources/prompts/blog-video-chatgpt.md`, в который подставлены персонажи, уже заведённые в админке, с их внешностью и голосом. В промпте описаны ограничения модели (8 с на сценарий, 1–3 короткие реплики, без титров) и точный формат ответа.
+1. **«Промпт для ChatGPT»** скачивает `chatgpt-video-prompt.md`. Это шаблон `resources/prompts/blog-video-chatgpt.md`, в который подставлены персонажи, уже заведённые в админке, с их внешностью и голосом. В промпте описаны ограничения модели (3–15 с на сценарий, обычно 10, 1–3 короткие реплики, без титров) и точный формат ответа.
 2. Промпт вставляется в ChatGPT, а в конце дописывается задача («ролик про новый сет Филадельфия, Марко хвалит, Даня пробует»). ChatGPT отвечает JSON.
 3. **«Імпорт з файлу»**: JSON загружается файлом (`.json` / `.txt`) или вставляется текстом. Ответ можно вставить целиком, с блоком ```json и пояснениями вокруг: из него берётся только JSON.
 
@@ -162,6 +165,7 @@ x-goog-api-key: $GEMINI_API_KEY
   "scenarios": [
     {
       "title": "01 — Название",
+      "duration": 10,
       "setting": "Scene in English",
       "style": "Camera, light, sound in English",
       "lines": [
@@ -179,7 +183,7 @@ x-goog-api-key: $GEMINI_API_KEY
 | `scenarios[].title` | да | |
 | `scenarios[].lines[].character` | да | имя персонажа; хотя бы одна реплика на сценарий |
 | `lines[].text` | нет | `null` — действие без слов |
-| `language`, `aspect_ratio` (`9:16`/`16:9`), `resolution` (`360p`/`720p`/`1080p`/`4k`) | нет | задаются для всего файла или для каждого сценария отдельно; по умолчанию `українська`, `9:16`, `720p` |
+| `language`, `aspect_ratio` (`9:16`/`16:9`), `resolution` (`360p`/`720p`/`1080p`/`4k`), `duration` (3–15) | нет | задаются для всего файла или для каждого сценария отдельно; по умолчанию `українська`, `9:16`, `720p`, `10` |
 | `characters` | нет | новые персонажи или новые описания существующих |
 | `reel_title` | нет | создать ролик из сценариев файла |
 
@@ -207,7 +211,7 @@ Google не присылает цену в долларах, только `usage
 
 ```
 cost = ( input_tokens × 1.50
-       + video_output_tokens × 17.50
+       + video_output_tokens × 12.00
        + (остальные output_tokens + thought_tokens) × 9.00 ) / 1 000 000
 ```
 
@@ -215,12 +219,13 @@ cost = ( input_tokens × 1.50
 - `cost` — сумма по сценарию; в таблице сценариев она суммируется по всем;
 - `last_usage` — сырой `usage` из последнего ответа.
 
-Фактические цифры на 28.10.2026:
+Цены Google за вывод видео на 06.11.2026, без входных токенов и «раздумий» модели:
 
 | Что | Стоимость |
 |---|---|
-| 8 с при 360p | ≈ $0.28 |
-| Продление ещё на 8 с при 360p | ≈ $0.30 |
+| 10 с при 360p | ≈ $0.23 |
+| 10 с при 720p | ≈ $0.70 |
+| 15 с при 720p | ≈ $1.04 |
 
 При изменении тарифов Google достаточно поменять `GEMINI_PRICE_*` в `.env`.
 

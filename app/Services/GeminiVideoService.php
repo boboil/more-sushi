@@ -44,9 +44,15 @@ class GeminiVideoService
             $images[] = $scenario->start_frame;
         }
 
-        foreach ($scenario->characters() as $character) {
+        $characters = $scenario->characters();
+        $withPhotos = $characters->filter(fn (VideoCharacter $character) => filled($character->reference_images))->count();
+        // Ліміт ділимо порівну, щоб кожен персонаж отримав хоча б одне фото.
+        $perCharacter = min(VideoScenario::MAX_IMAGES_PER_CHARACTER, intdiv(VideoScenario::MAX_IMAGES, max(1, $withPhotos)));
+
+        foreach ($characters as $character) {
             $refs = [];
-            foreach ($scenario->start_frame ? [] : ($character->reference_images ?? []) as $path) {
+            $photos = $scenario->start_frame ? [] : array_slice($character->reference_images ?? [], 0, max(1, $perCharacter));
+            foreach (array_slice($photos, 0, VideoScenario::MAX_IMAGES - count($images)) as $path) {
                 $refs[] = '<IMAGE_REF_' . count($images) . '>';
                 $images[] = $path;
             }
@@ -65,7 +71,7 @@ class GeminiVideoService
         }
 
         $extraRefs = [];
-        foreach ($scenario->extra_references ?? [] as $path) {
+        foreach (array_slice($scenario->extra_references ?? [], 0, VideoScenario::MAX_IMAGES - count($images)) as $path) {
             $extraRefs[] = '<IMAGE_REF_' . count($images) . '>';
             $images[] = $path;
         }
@@ -112,6 +118,7 @@ class GeminiVideoService
                 'type' => 'video',
                 'aspect_ratio' => $scenario->aspect_ratio,
                 'resolution' => $scenario->resolution,
+                'duration' => $scenario->clip_seconds . 's',
                 'delivery' => 'uri',
             ],
         ]);
@@ -138,7 +145,7 @@ class GeminiVideoService
      */
     public function buildExtensionPrompt(VideoScenario $scenario, array $lines, ?string $instructions): string
     {
-        $sections = ['Extend this video with a seamless continuation of about 8 seconds. Keep exactly the same '
+        $sections = ["Extend this video with a seamless continuation of about {$scenario->extensionSeconds()} seconds. Keep exactly the same "
             . 'characters, faces, clothing, voices, location, lighting and camera style. No cuts, no subtitles, no music.'];
 
         $voices = $this->charactersFor($lines)
@@ -160,7 +167,7 @@ class GeminiVideoService
     public function extend(VideoScenario $scenario, array $lines, ?string $instructions = null): void
     {
         if (! $scenario->canBeExtended()) {
-            throw new RuntimeException('Продовжити можна лише готове відео коротше ' . VideoScenario::MAX_DURATION . ' секунд');
+            throw new RuntimeException('Продовжити можна лише готове відео, якщо до ліміту ' . VideoScenario::MAX_DURATION . ' с лишилось хоча б ' . VideoScenario::MIN_EXTENSION_SECONDS . ' с');
         }
 
         $prompt = $this->buildExtensionPrompt($scenario, $lines, $instructions);
@@ -174,6 +181,7 @@ class GeminiVideoService
                 'type' => 'video',
                 'aspect_ratio' => $scenario->aspect_ratio,
                 'resolution' => $scenario->resolution,
+                'duration' => $scenario->extensionSeconds() . 's',
                 'delivery' => 'uri',
             ],
         ]);

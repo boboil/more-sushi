@@ -21,6 +21,7 @@ use Illuminate\Support\Collection;
  * @property string $language
  * @property string $aspect_ratio
  * @property string $resolution
+ * @property int $clip_seconds бажана довжина кліпу; фактична — у $duration
  * @property string $status draft|processing|done|failed
  * @property string|null $interaction_id остання вдала (або поточна) задача — від неї продовжується ланцюжок
  * @property string|null $previous_interaction_id задача до поточного продовження, щоб відкотитись при помилці
@@ -41,8 +42,19 @@ class VideoScenario extends Model
     public const STATUS_DONE = 'done';
     public const STATUS_FAILED = 'failed';
 
-    /** Gemini подовжує згенероване відео максимум до ~40 секунд загалом. */
-    public const MAX_DURATION = 40;
+    /** Ліміти gemini-omni-1.2-flash: довжина одного кліпу. */
+    public const MIN_CLIP_SECONDS = 3;
+    public const MAX_CLIP_SECONDS = 15;
+    public const DEFAULT_CLIP_SECONDS = 10;
+
+    /** Продовження: 3–10 секунд за раз, усе відео не довше 30 секунд. */
+    public const MAX_DURATION = 30;
+    public const MIN_EXTENSION_SECONDS = 3;
+    public const MAX_EXTENSION_SECONDS = 10;
+
+    /** Картинок у запиті і фото одного персонажа. */
+    public const MAX_IMAGES = 6;
+    public const MAX_IMAGES_PER_CHARACTER = 3;
 
     public const STATUSES = [
         self::STATUS_DRAFT => 'Чернетка',
@@ -55,17 +67,19 @@ class VideoScenario extends Model
 
     protected $fillable = [
         'title', 'setting', 'style', 'start_frame', 'lines', 'extra_instructions', 'extra_references',
-        'language', 'aspect_ratio', 'resolution',
+        'language', 'aspect_ratio', 'resolution', 'clip_seconds',
     ];
 
     protected $attributes = [
         'language' => 'українська',
         'aspect_ratio' => '9:16',
         'resolution' => '720p',
+        'clip_seconds' => self::DEFAULT_CLIP_SECONDS,
         'status' => self::STATUS_DRAFT,
     ];
 
     protected $casts = [
+        'clip_seconds' => 'integer',
         'lines' => 'array',
         'extensions' => 'array',
         'extending' => 'boolean',
@@ -98,6 +112,14 @@ class VideoScenario extends Model
         return $this->status === self::STATUS_DONE
             && $this->interaction_id
             && $this->video_path
-            && ($this->duration ?? 0) < self::MAX_DURATION - 5;
+            && $this->extensionSeconds() >= self::MIN_EXTENSION_SECONDS;
+    }
+
+    /**
+     * Скільки цілих секунд можна дописати за одне продовження.
+     */
+    public function extensionSeconds(): int
+    {
+        return (int) min(self::MAX_EXTENSION_SECONDS, floor(self::MAX_DURATION - ($this->duration ?? 0)));
     }
 }

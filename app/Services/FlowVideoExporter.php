@@ -116,7 +116,7 @@ class FlowVideoExporter
     {
         $lines = [
             "Сценарій: {$scenario->title}",
-            "Формат: {$scenario->aspect_ratio}, якість: {$scenario->resolution}, модель: Omni Flash",
+            "Формат: {$scenario->aspect_ratio}, якість: {$scenario->resolution}, тривалість: {$scenario->clip_seconds} с, модель: Omni Flash",
             '',
             'Як згенерувати в Google Flow (labs.google/flow):',
             '1. Новий проєкт, модель Omni Flash, формат ' . $scenario->aspect_ratio . '.',

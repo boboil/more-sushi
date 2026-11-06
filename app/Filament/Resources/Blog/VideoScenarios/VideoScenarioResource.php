@@ -58,11 +58,15 @@ class VideoScenarioResource extends Resource
                     ->columnSpanFull(),
                 Section::make('Сценарій')->schema([
                     TextInput::make('title')->label('Назва')->required()->maxLength(255)->columnSpanFull(),
-                    Grid::make(3)->schema([
+                    Grid::make(4)->schema([
                         Select::make('aspect_ratio')->label('Формат')->required()->default('9:16')->selectablePlaceholder(false)
                             ->options(['9:16' => '9:16 — вертикальне (Reels, Shorts, TikTok)', '16:9' => '16:9 — горизонтальне']),
                         Select::make('resolution')->label('Якість')->required()->default('720p')->selectablePlaceholder(false)
                             ->options(['360p' => '360p (чернетка)', '720p' => '720p', '1080p' => '1080p', '4k' => '4K']),
+                        Select::make('clip_seconds')->label('Тривалість')->required()->selectablePlaceholder(false)
+                            ->default(VideoScenario::DEFAULT_CLIP_SECONDS)
+                            ->options(collect(range(VideoScenario::MIN_CLIP_SECONDS, VideoScenario::MAX_CLIP_SECONDS))
+                                ->mapWithKeys(fn (int $seconds) => [$seconds => "{$seconds} с"])->all()),
                         TextInput::make('language')->label('Мова діалогів')->required()->default('українська')->maxLength(50),
                     ]),
                 ])->columnSpanFull(),
@@ -84,7 +88,8 @@ class VideoScenarioResource extends Resource
                 Section::make('Додатково')->schema([
                     FileUpload::make('extra_references')->label('Референси сцени (локація, страви, реквізит)')
                         ->image()->multiple()->reorderable()->maxFiles(5)->maxSize(10 * 1024)->panelLayout('grid')
-                        ->disk('public_root')->directory('blog-video/references')->visibility('public'),
+                        ->disk('public_root')->directory('blog-video/references')->visibility('public')
+                        ->helperText('У запит іде до ' . VideoScenario::MAX_IMAGES . ' картинок: спочатку фото персонажів, потім ці, за порядком.'),
                     Textarea::make('extra_instructions')->label('Додаткові вказівки для моделі')->rows(3)
                         ->helperText('Додаються в кінець промпта як є. Краще англійською.'),
                 ])->collapsible()->columnSpanFull(),

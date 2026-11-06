@@ -52,7 +52,7 @@ class VideoCharacterResource extends Resource
                         ->placeholder('Теплий жіночий голос, говорить швидко й весело'),
                 ])->columnSpanFull(),
                 Section::make('Референси')
-                    ->description('Фото обличчя/образу з різних ракурсів — модель тримає схожість персонажа за ними. 1–3 фото зазвичай достатньо.')
+                    ->description('Фото обличчя/образу з різних ракурсів — модель тримає схожість персонажа за ними. У модель ідуть лише перші 3 фото, порядок можна змінити перетягуванням.')
                     ->schema([
                         FileUpload::make('reference_images')->hiddenLabel()->image()->multiple()->reorderable()
                             ->maxFiles(5)->maxSize(10 * 1024)->panelLayout('grid')

@@ -57,7 +57,7 @@ class EditVideoScenario extends EditRecord
                 ->icon('heroicon-o-forward')
                 ->visible(fn () => $this->record->canBeExtended())
                 ->modalHeading('Продовжити відео')
-                ->modalDescription(fn () => 'Модель допише ~8 секунд до готового відео з тими самими персонажами і голосами. '
+                ->modalDescription(fn () => 'Модель допише ~' . $this->record->extensionSeconds() . ' с до готового відео з тими самими персонажами і голосами. '
                     . 'Зараз ' . round($this->record->duration ?? 0) . ' с, максимум ' . VideoScenario::MAX_DURATION . ' с. Генерація платна.')
                 ->modalSubmitActionLabel('Продовжити')
                 ->schema([
