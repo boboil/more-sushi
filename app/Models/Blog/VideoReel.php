@@ -12,6 +12,8 @@ use Illuminate\Support\Collection;
  * @property string $title
  * @property array|null $items [{scenario_id}] у порядку показу
  * @property string|null $video_path
+ * @property string|null $youtube_video_id
+ * @property \Illuminate\Support\Carbon|null $youtube_uploaded_at
  * @property float|null $duration
  * @property string|null $error
  * @property \Illuminate\Support\Carbon|null $built_at
@@ -26,6 +28,7 @@ class VideoReel extends Model
         'items' => 'array',
         'duration' => 'float',
         'built_at' => 'datetime',
+        'youtube_uploaded_at' => 'datetime',
     ];
 
     /**

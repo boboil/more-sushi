@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Blog\VideoScenarios\Pages;
 
+use App\Filament\Resources\Blog\Concerns\HasYouTubeActions;
 use App\Filament\Resources\Blog\VideoScenarios\VideoScenarioResource;
 use App\Models\Blog\VideoScenario;
 use App\Services\FlowVideoExporter;
@@ -22,6 +23,8 @@ use Throwable;
  */
 class EditVideoScenario extends EditRecord
 {
+    use HasYouTubeActions;
+
     protected static string $resource = VideoScenarioResource::class;
 
     protected function getHeaderActions(): array
@@ -128,6 +131,7 @@ class EditVideoScenario extends EditRecord
                 ->color('gray')
                 ->visible(fn () => (bool) $this->record->video_path)
                 ->url(fn () => asset($this->record->video_path), shouldOpenInNewTab: true),
+            ...$this->youTubeActions(),
             DeleteAction::make(),
         ];
     }

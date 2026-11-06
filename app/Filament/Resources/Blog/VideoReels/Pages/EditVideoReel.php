@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Blog\VideoReels\Pages;
 
+use App\Filament\Resources\Blog\Concerns\HasYouTubeActions;
 use App\Filament\Resources\Blog\VideoReels\VideoReelResource;
 use App\Models\Blog\VideoReel;
 use App\Services\VideoReelBuilder;
@@ -16,6 +17,8 @@ use Throwable;
  */
 class EditVideoReel extends EditRecord
 {
+    use HasYouTubeActions;
+
     protected static string $resource = VideoReelResource::class;
 
     protected function getHeaderActions(): array
@@ -43,6 +46,7 @@ class EditVideoReel extends EditRecord
                 ->color('gray')
                 ->visible(fn () => (bool) $this->record->video_path)
                 ->url(fn () => asset($this->record->video_path), shouldOpenInNewTab: true),
+            ...$this->youTubeActions(),
             DeleteAction::make(),
         ];
     }

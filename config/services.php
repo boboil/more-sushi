@@ -42,6 +42,13 @@ return [
         ],
     ],
 
+    'youtube' => [
+        'client_id' => env('YOUTUBE_CLIENT_ID'),
+        'client_secret' => env('YOUTUBE_CLIENT_SECRET'),
+        // Канал «Дари Моря Суші»: інший канал цього акаунта підключити не можна.
+        'channel_id' => env('YOUTUBE_CHANNEL_ID', 'UCSMjVdmMHYrtbW9rWWpEnMA'),
+    ],
+
     'ffmpeg' => [
         'ffmpeg' => env('FFMPEG_BIN', 'ffmpeg'),
         'ffprobe' => env('FFPROBE_BIN', 'ffprobe'),

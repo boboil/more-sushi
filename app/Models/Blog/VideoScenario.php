@@ -27,6 +27,8 @@ use Illuminate\Support\Collection;
  * @property string|null $previous_interaction_id задача до поточного продовження, щоб відкотитись при помилці
  * @property string|null $file_id
  * @property string|null $video_path
+ * @property string|null $youtube_video_id
+ * @property \Illuminate\Support\Carbon|null $youtube_uploaded_at
  * @property float|null $duration секунди
  * @property float $cost USD, усього витрачено на сценарій (всі генерації й продовження)
  * @property float|null $last_cost USD, остання генерація чи продовження
@@ -89,6 +91,7 @@ class VideoScenario extends Model
         'last_usage' => 'array',
         'extra_references' => 'array',
         'generated_at' => 'datetime',
+        'youtube_uploaded_at' => 'datetime',
     ];
 
     /**

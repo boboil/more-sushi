@@ -205,6 +205,23 @@ x-goog-api-key: $GEMINI_API_KEY
 - Стоимость в админке не считается: её видно только в кредитах Flow.
 - Livewire по умолчанию ограничивает загрузку 12 МБ. В `config/livewire.php` лимит поднят до 100 МБ, как у php-fpm и nginx на проде.
 
+## Загрузка на YouTube
+
+На страницах сценария и ролика, когда есть готовое видео, появляется кнопка «На YouTube». Код: `app/Services/YouTubeService.php`, кнопки в `app/Filament/Resources/Blog/Concerns/HasYouTubeActions.php`.
+
+Настройка один раз:
+1. В Google Cloud включить YouTube Data API v3 и создать OAuth-клиент типа Web application с Redirect URI `https://bot.moresushi.in.ua/admin/youtube/callback`.
+2. Перевести OAuth-приложение в статус In production. В статусе Testing refresh token живёт 7 дней.
+3. Добавить в `.env` `YOUTUBE_CLIENT_ID` и `YOUTUBE_CLIENT_SECRET`.
+4. В админке нажать «Підключити YouTube» и в окне Google выбрать канал «Дари Моря Суші». Другой канал система не примет: сверяется `YOUTUBE_CHANNEL_ID`.
+
+Как работает:
+- токен хранится зашифрованным в `blog_youtube_connections`;
+- файл загружается сразу из действия (resumable upload одним запросом), очереди нет;
+- заголовок, описание, видимость и пометка об ИИ задаются в окне загрузки; категория «Люди й блоги», язык украинский и «не для детей» всегда передаются явно, на шаблон загрузки из YouTube Studio код не рассчитывает;
+- id видео сохраняется в `youtube_video_id`. После перегенерации и повторной загрузки на канале будет новая копия, старая сама не удаляется;
+- лимит Google: 100 загрузок в день.
+
 ## Стоимость
 
 Google не присылает цену в долларах, только `usage` в токенах. Стоимость считается в `GeminiVideoService::cost()`:
