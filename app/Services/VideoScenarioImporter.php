@@ -121,10 +121,33 @@ class VideoScenarioImporter
             ->implode("\n");
 
         return str_replace(
-            '{{characters}}',
-            $characters ?: '(персонажів ще немає — придумай їх і опиши в "characters")',
+            ['{{characters}}', '{{recent}}'],
+            [
+                $characters ?: '(персонажів ще немає — придумай їх і опиши в "characters")',
+                $this->recentScenarios() ?: '(роликів ще немає)',
+            ],
             file_get_contents(resource_path(self::PROMPT_TEMPLATE)),
         );
+    }
+
+    /**
+     * Останні сценарії з репліками, щоб ChatGPT не повторював сюжети й панчлайни.
+     */
+    private function recentScenarios(int $limit = 12): string
+    {
+        $names = VideoCharacter::query()->pluck('name', 'id');
+
+        return VideoScenario::query()->latest('id')->limit($limit)->get()
+            ->map(function (VideoScenario $scenario) use ($names) {
+                $lines = collect($scenario->lines ?? [])
+                    ->filter(fn (array $line) => filled($line['text'] ?? null))
+                    ->map(fn (array $line) => ($names[$line['character_id'] ?? null] ?? '?') . ': ' . Str::squish($line['text']))
+                    ->implode(' / ');
+                $title = preg_replace('/^\d+\s*[—-]\s*/u', '', $scenario->title);
+
+                return "- {$title}" . ($lines ? " — {$lines}" : '');
+            })
+            ->implode("\n");
     }
 
     private function validate(array $data): void

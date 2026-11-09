@@ -454,12 +454,28 @@ class BlogVideoTest extends TestCase
 
         $this->assertStringContainsString("- Марко\n  Голос: Low, warm", $prompt);
         $this->assertStringNotContainsString('{{characters}}', $prompt);
+        $this->assertStringNotContainsString('{{recent}}', $prompt);
+        $this->assertStringContainsString('(роликів ще немає)', $prompt);
         $this->assertStringContainsString('"scenarios"', $prompt);
 
         $this->actingAs($this->createManager());
         Livewire::test(ListVideoScenarios::class)
             ->callAction('chatGptPrompt')
             ->assertFileDownloaded('chatgpt-video-prompt.md');
+    }
+
+    public function test_chatgpt_prompt_lists_recent_scenarios(): void
+    {
+        $marko = VideoCharacter::query()->create(['name' => 'Марко']);
+        $scenario = new VideoScenario(['title' => '01 — Суші на дієті', 'lines' => [
+            ['character_id' => $marko->id, 'text' => 'Ти ж на дієті!', 'direction' => null],
+            ['character_id' => $marko->id, 'text' => null, 'direction' => 'nods'],
+        ]]);
+        $scenario->save();
+
+        $prompt = app(VideoScenarioImporter::class)->chatGptPrompt();
+
+        $this->assertStringContainsString('- Суші на дієті — Марко: Ти ж на дієті!', $prompt);
     }
 
     public function test_flow_export_contains_prompt_and_numbered_images(): void
