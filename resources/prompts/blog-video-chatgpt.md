@@ -63,7 +63,7 @@
   ],
   "scenarios": [
     {
-      "title": "01 — Коротка назва частини",
+      "title": "Коротка назва ролика",
       "duration": 10,
       "setting": "In English: where we are, what is in frame, what happens during this clip",
       "style": "In English: camera (shot size, movement), light, mood, ambient sound/music",
@@ -84,7 +84,7 @@
 - `setting`, `style`, `description`, `voice`, `extra_instructions` — англійською: модель так точніше розуміє.
 - `duration`: ціле число секунд від 3 до 15.
 - `aspect_ratio`: "9:16" або "16:9". `resolution`: "360p" (чернетка, дешевше), "720p", "1080p" або "4k".
-- `title` нумеруй по порядку: "01 — ...", "02 — ...".
+- `title` — коротка назва без номера, вона ж піде в назву відео на YouTube. Номери "01 — ...", "02 — ..." став лише тоді, коли одна історія розбита на кілька частин.
 - Не додавай інших полів.
 
 ## Завдання
