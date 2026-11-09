@@ -464,6 +464,33 @@ class BlogVideoTest extends TestCase
             ->assertFileDownloaded('chatgpt-video-prompt.md');
     }
 
+    public function test_import_numbers_series_episodes_in_order(): void
+    {
+        VideoCharacter::query()->create(['name' => 'Марко']);
+        $importer = app(VideoScenarioImporter::class);
+        $json = fn (array $titles) => ['series' => 'Таємна клієнтка', 'scenarios' => array_map(fn (string $title) => [
+            'title' => $title, 'lines' => [['character' => 'Марко', 'text' => 'Привіт']],
+        ], $titles)];
+
+        $importer->import($json(['Два прибори', 'Записка']));
+        $importer->import($json(['Відгук']));
+        $importer->import(['scenarios' => [['title' => 'Окремий', 'lines' => [['character' => 'Марко', 'text' => 'Так']]]]]);
+
+        $this->assertSame(
+            ['Два прибори' => 1, 'Записка' => 2, 'Відгук' => 3],
+            VideoScenario::query()->where('series', 'Таємна клієнтка')->orderBy('series_episode')->pluck('series_episode', 'title')->all(),
+        );
+        $this->assertNull(VideoScenario::query()->where('title', 'Окремий')->value('series'));
+        $this->assertSame('Таємна клієнтка · 2/3', VideoScenario::query()->where('title', 'Записка')->first()->seriesLabel());
+
+        $this->actingAs($this->createManager());
+        Livewire::test(ListVideoScenarios::class)
+            ->assertSee('Таємна клієнтка · 1/3')
+            ->filterTable('series', 'Таємна клієнтка')
+            ->assertCanSeeTableRecords(VideoScenario::query()->where('series', 'Таємна клієнтка')->orderBy('series_episode')->get(), inOrder: true)
+            ->assertCanNotSeeTableRecords(VideoScenario::query()->where('title', 'Окремий')->get());
+    }
+
     public function test_chatgpt_prompt_lists_recent_scenarios(): void
     {
         $marko = VideoCharacter::query()->create(['name' => 'Марко']);

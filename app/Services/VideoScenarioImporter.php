@@ -79,8 +79,13 @@ class VideoScenarioImporter
                 $resolve($character['name'], $character);
             }
 
-            $scenarios = collect($data['scenarios'])->map(fn (array $item) => VideoScenario::query()->create([
+            $series = filled($data['series'] ?? null) ? trim($data['series']) : null;
+            $firstEpisode = $series ? (int) VideoScenario::query()->where('series', $series)->max('series_episode') + 1 : null;
+
+            $scenarios = collect($data['scenarios'])->values()->map(fn (array $item, int $index) => VideoScenario::query()->create([
                 'title' => $item['title'],
+                'series' => $series,
+                'series_episode' => $series ? $firstEpisode + $index : null,
                 'setting' => $item['setting'] ?? null,
                 'style' => $item['style'] ?? null,
                 'extra_instructions' => $item['extra_instructions'] ?? null,
@@ -158,6 +163,7 @@ class VideoScenarioImporter
             'resolution' => ['nullable', 'in:' . implode(',', self::RESOLUTIONS)],
             'duration' => $this->durationRule(),
             'reel_title' => ['nullable', 'string', 'max:255'],
+            'series' => ['nullable', 'string', 'max:255'],
             'characters' => ['nullable', 'array'],
             'characters.*.name' => ['required', 'string', 'max:255'],
             'characters.*.description' => ['nullable', 'string'],

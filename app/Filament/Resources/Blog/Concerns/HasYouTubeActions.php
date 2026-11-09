@@ -37,7 +37,8 @@ trait HasYouTubeActions
                 ->disabled(fn () => $this->record instanceof VideoScenario && $this->record->isProcessing())
                 ->modalHeading('Завантажити на YouTube')
                 ->modalDescription(fn (YouTubeService $youtube) => 'Канал: ' . $youtube->connection()?->channel_title . '.'
-                    . ($this->record->youtube_video_id ? ' Це відео вже завантажували: на каналі з\'явиться ще одна копія.' : ''))
+                    . ($this->record->youtube_video_id ? ' Це відео вже завантажували: на каналі з\'явиться ще одна копія.' : '')
+                    . $this->earlierEpisodesWarning())
                 ->modalSubmitActionLabel('Завантажити')
                 ->schema([
                     TextInput::make('title')->label('Заголовок')->required()->maxLength(100)
@@ -69,5 +70,16 @@ trait HasYouTubeActions
                 ->visible(fn () => (bool) $this->record->youtube_video_id)
                 ->url(fn () => "https://youtu.be/{$this->record->youtube_video_id}", shouldOpenInNewTab: true),
         ];
+    }
+
+    private function earlierEpisodesWarning(): string
+    {
+        if (! $this->record instanceof VideoScenario) {
+            return '';
+        }
+
+        $missing = $this->record->earlierEpisodesNotOnYouTube();
+
+        return $missing->isEmpty() ? '' : ' Увага: серії ' . $missing->implode(', ') . ' ще не на YouTube, їх краще викласти раніше.';
     }
 }

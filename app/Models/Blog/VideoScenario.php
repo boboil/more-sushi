@@ -10,6 +10,8 @@ use Illuminate\Support\Collection;
  *
  * @property int $id
  * @property string $title
+ * @property string|null $series назва історії з кількох шортсів
+ * @property int|null $series_episode номер у серії, він же порядок публікації
  * @property string|null $setting
  * @property string|null $style
  * @property string|null $start_frame перший кадр відео; з ним фото персонажів не відправляються
@@ -68,7 +70,7 @@ class VideoScenario extends Model
     protected $table = 'blog_video_scenarios';
 
     protected $fillable = [
-        'title', 'setting', 'style', 'start_frame', 'lines', 'extra_instructions', 'extra_references',
+        'title', 'series', 'series_episode', 'setting', 'style', 'start_frame', 'lines', 'extra_instructions', 'extra_references',
         'language', 'aspect_ratio', 'resolution', 'clip_seconds',
     ];
 
@@ -82,6 +84,7 @@ class VideoScenario extends Model
 
     protected $casts = [
         'clip_seconds' => 'integer',
+        'series_episode' => 'integer',
         'lines' => 'array',
         'extensions' => 'array',
         'extending' => 'boolean',
@@ -103,6 +106,37 @@ class VideoScenario extends Model
         $characters = VideoCharacter::query()->whereIn('id', $ids)->get()->keyBy('id');
 
         return $ids->map(fn ($id) => $characters->get($id))->filter()->values();
+    }
+
+    /**
+     * «Таємна клієнтка · 2/5», або null поза серією.
+     */
+    public function seriesLabel(): ?string
+    {
+        if (! $this->series) {
+            return null;
+        }
+
+        $total = self::query()->where('series', $this->series)->max('series_episode');
+
+        return $this->series . ($this->series_episode ? " · {$this->series_episode}/" . max($total, $this->series_episode) : '');
+    }
+
+    /**
+     * Попередні серії, яких ще немає на YouTube: їх треба викласти раніше.
+     */
+    public function earlierEpisodesNotOnYouTube(): Collection
+    {
+        if (! $this->series || ! $this->series_episode) {
+            return collect();
+        }
+
+        return self::query()
+            ->where('series', $this->series)
+            ->where('series_episode', '<', $this->series_episode)
+            ->whereNull('youtube_video_id')
+            ->orderBy('series_episode')
+            ->pluck('series_episode');
     }
 
     public function isProcessing(): bool

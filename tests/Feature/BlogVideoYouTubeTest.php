@@ -139,6 +139,25 @@ class BlogVideoYouTubeTest extends TestCase
             && $request->body() === 'MP4');
     }
 
+    public function test_upload_warns_about_earlier_episodes(): void
+    {
+        $this->connect();
+        $first = $this->scenarioWithVideo();
+        $first->forceFill(['series' => 'Серія', 'series_episode' => 1])->save();
+        $second = $this->scenarioWithVideo();
+        $second->forceFill(['series' => 'Серія', 'series_episode' => 2])->save();
+
+        Livewire::test(EditVideoScenario::class, ['record' => $second->getKey()])
+            ->mountAction('youtubeUpload')
+            ->assertMountedActionModalSee('серії 1 ще не на YouTube');
+
+        $first->forceFill(['youtube_video_id' => 'yt1'])->save();
+
+        Livewire::test(EditVideoScenario::class, ['record' => $second->getKey()])
+            ->mountAction('youtubeUpload')
+            ->assertMountedActionModalDontSee('ще не на YouTube');
+    }
+
     public function test_reel_is_uploaded(): void
     {
         $this->connect();

@@ -59,6 +59,14 @@ class VideoScenarioResource extends Resource
                 Section::make('Сценарій')->schema([
                     TextInput::make('title')->label('Назва')->required()->maxLength(255)->columnSpanFull(),
                     Grid::make(4)->schema([
+                        TextInput::make('series')->label('Серія')->maxLength(255)->columnSpan(3)
+                            ->datalist(fn () => VideoScenario::query()->whereNotNull('series')->distinct()->orderBy('series')->pluck('series')->all())
+                            ->helperText('Для кількох шортсів однієї історії: однакова назва в усіх частинах.'),
+                        TextInput::make('series_episode')->label('Номер у серії')->integer()->minValue(1)->maxValue(99)
+                            ->requiredWith('series')
+                            ->helperText('У такому порядку викладати.'),
+                    ]),
+                    Grid::make(4)->schema([
                         Select::make('aspect_ratio')->label('Формат')->required()->default('9:16')->selectablePlaceholder(false)
                             ->options(['9:16' => '9:16 — вертикальне (Reels, Shorts, TikTok)', '16:9' => '16:9 — горизонтальне']),
                         Select::make('resolution')->label('Якість')->required()->default('720p')->selectablePlaceholder(false)
@@ -128,9 +136,17 @@ class VideoScenarioResource extends Resource
     {
         return $table
             ->recordTitleAttribute('title')
-            ->defaultSort('updated_at', 'desc')
+            // з фільтром за серією — у порядку публікації, інакше свіжі зверху
+            ->defaultSort(fn ($query, $livewire) => filled($livewire->tableFilters['series']['value'] ?? null)
+                ? $query->orderBy('series_episode')
+                : $query->orderByDesc('updated_at'))
             ->columns([
                 TextColumn::make('title')->label('Назва')->searchable(),
+                TextColumn::make('series')->label('Серія')->placeholder('—')->searchable()
+                    ->state(fn (VideoScenario $record) => $record->seriesLabel())
+                    ->sortable(query: fn ($query, string $direction) => $query->orderBy('series', $direction)->orderBy('series_episode', $direction)),
+                TextColumn::make('youtube_uploaded_at')->label('На YouTube')->dateTime('d.m.Y H:i')->placeholder('—')->sortable()
+                    ->url(fn (VideoScenario $record) => $record->youtube_video_id ? "https://youtu.be/{$record->youtube_video_id}" : null, shouldOpenInNewTab: true),
                 TextColumn::make('status')->label('Статус')->badge()
                     ->formatStateUsing(fn (string $state) => VideoScenario::STATUSES[$state] ?? $state)
                     ->color(fn (string $state) => match ($state) {
@@ -150,11 +166,14 @@ class VideoScenarioResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('status')->label('Статус')->options(VideoScenario::STATUSES),
+                SelectFilter::make('series')->label('Серія')
+                    ->options(fn () => VideoScenario::query()->whereNotNull('series')->distinct()->orderBy('series')->pluck('series', 'series')->all())
+                    ->query(fn ($query, array $data) => filled($data['value'] ?? null) ? $query->where('series', $data['value']) : $query),
             ])
             ->recordActions([
                 EditAction::make(),
                 ReplicateAction::make()->label('Копія')
-                    ->excludeAttributes(['status', 'interaction_id', 'previous_interaction_id', 'extending', 'extensions', 'file_id', 'video_path', 'duration', 'cost', 'last_cost', 'last_usage', 'last_prompt', 'error', 'generated_at'])
+                    ->excludeAttributes(['status', 'interaction_id', 'previous_interaction_id', 'extending', 'extensions', 'file_id', 'video_path', 'duration', 'cost', 'last_cost', 'last_usage', 'last_prompt', 'error', 'generated_at', 'youtube_video_id', 'youtube_uploaded_at'])
                     ->beforeReplicaSaved(fn (VideoScenario $replica) => $replica->title .= ' (копія)'),
                 DeleteAction::make(),
             ])
