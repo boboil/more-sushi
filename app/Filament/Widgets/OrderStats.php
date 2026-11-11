@@ -32,9 +32,9 @@ class OrderStats extends StatsOverviewWidget
     protected function getStats(): array
     {
         $period = OrderPeriod::fromFilters($this->pageFilters);
-        $orders = OrderAnalytics::orders($period->from, $period->to);
+        $orders = OrderAnalytics::orders($period->from, $period->to, $period->payment);
         $now = OrderAnalytics::summary($orders, $period->from);
-        $before = OrderAnalytics::summary(OrderAnalytics::orders($period->previousFrom, $period->previousTo), $period->previousFrom);
+        $before = OrderAnalytics::summary(OrderAnalytics::orders($period->previousFrom, $period->previousTo, $period->payment), $period->previousFrom);
         [$countByBucket, $revenueByBucket] = $this->series($orders, $period);
 
         return [

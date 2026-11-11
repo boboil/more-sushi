@@ -42,8 +42,13 @@ class Dashboard extends BaseDashboard
                             ->displayFormat('d.m.Y')
                             ->maxDate(now())
                             ->visible($custom),
+                        Select::make('payment')
+                            ->label('Оплата')
+                            ->options(OrderPeriod::PAYMENTS)
+                            ->placeholder('Усі')
+                            ->native(false),
                     ])
-                    ->columns(3)
+                    ->columns(4)
                     ->columnSpanFull(),
             ]);
     }

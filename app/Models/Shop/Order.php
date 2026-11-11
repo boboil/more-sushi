@@ -22,6 +22,7 @@ class Order extends Model
     protected $casts = [
         'is_as_soon_as_possible' => 'boolean',
         'time' => 'datetime',
+        'attribution' => 'array',
     ];
 
     public function products()

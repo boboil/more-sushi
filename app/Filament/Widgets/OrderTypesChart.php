@@ -23,7 +23,7 @@ class OrderTypesChart extends ChartWidget
     protected function getData(): array
     {
         $period = OrderPeriod::fromFilters($this->pageFilters);
-        $orders = OrderAnalytics::orders($period->from, $period->to);
+        $orders = OrderAnalytics::orders($period->from, $period->to, $period->payment);
 
         $segments = [
             'Курʼєр · готівка' => fn (Order $o) => $o->customer_delivery_type === OrderAnalytics::DELIVERY_COURIER && $o->online_payment !== 'термінал',

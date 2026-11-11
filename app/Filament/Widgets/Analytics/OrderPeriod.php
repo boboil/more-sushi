@@ -22,6 +22,12 @@ final class OrderPeriod
 
     public const DEFAULT_PRESET = 'last_7';
 
+    /** Фільтр за способом оплати: значення shop_order.online_payment */
+    public const PAYMENTS = [
+        'готівка' => 'Готівка',
+        'термінал' => 'Термінал',
+    ];
+
     /** Довші періоди групуємо на графіках по місяцях, а не по днях */
     private const DAILY_LIMIT_DAYS = 62;
 
@@ -30,6 +36,7 @@ final class OrderPeriod
         public readonly CarbonImmutable $to,
         public readonly CarbonImmutable $previousFrom,
         public readonly CarbonImmutable $previousTo,
+        public readonly ?string $payment = null,
     ) {
     }
 
@@ -69,7 +76,10 @@ final class OrderPeriod
         // період ще триває — порівнюємо з попереднім до того ж часу доби, а не з повним днем
         $previousEnd = $to->isSameDay($today) ? $previousTo->setTimeFrom($now) : $previousTo->endOfDay();
 
-        return new self($from->startOfDay(), $to->endOfDay(), $previousFrom->startOfDay(), $previousEnd);
+        $payment = $filters['payment'] ?? null;
+        $payment = is_string($payment) && array_key_exists($payment, self::PAYMENTS) ? $payment : null;
+
+        return new self($from->startOfDay(), $to->endOfDay(), $previousFrom->startOfDay(), $previousEnd, $payment);
     }
 
     /**
@@ -143,8 +153,10 @@ final class OrderPeriod
 
     public function label(): string
     {
-        return $this->from->isSameDay($this->to)
+        $dates = $this->from->isSameDay($this->to)
             ? $this->from->format('d.m.Y')
             : $this->from->format('d.m.Y') . ' – ' . $this->to->format('d.m.Y');
+
+        return $this->payment ? $dates . ' · оплата: ' . mb_strtolower(self::PAYMENTS[$this->payment]) : $dates;
     }
 }

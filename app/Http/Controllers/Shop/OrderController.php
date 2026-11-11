@@ -8,6 +8,7 @@ use App\Models\Shop\Order;
 use App\Models\Landing\Order as LOrder;
 use App\Models\Shop\Product;
 use Carbon\Carbon;
+use App\Services\Statistics\OrderAttribution;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
@@ -53,7 +54,7 @@ class OrderController extends Controller
             ];
         }
         $comment = $this->commentToPosterOrder($customer);
-        $posterUtil = new PosterAuthController();
+        $posterUtil = app(PosterAuthController::class); // через контейнер, щоб у тестах не ходити в Poster
         $posterOrder = $posterUtil->createIncomingOrder($posterOrderProducts, $customer, $delivery, $comment);
 
         $time = Carbon::parse($customer['time']['day'] . $customer['time']['time']);
@@ -70,6 +71,8 @@ class OrderController extends Controller
         $order->is_as_soon_as_possible = $customer['isAsSoonAsPossible'] == 'true' ? 1 : 0;
         $order->time = $time->toDateTime();
         $order->sum = $sum;
+        // звідки прийшов відвідувач (UTM / реферер); у Poster не передаємо
+        $order->attribution = OrderAttribution::sanitize($request->input('attribution'));
         $order->save();
         foreach ($products as $product) {
             $order->products()->attach($product['id'], ['shop_product_quantity' => $product['quantity']]);

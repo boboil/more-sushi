@@ -27,7 +27,7 @@ class OrdersByWeekdayChart extends ChartWidget
     protected function getData(): array
     {
         $period = OrderPeriod::fromFilters($this->pageFilters);
-        $byDay = OrderAnalytics::orders($period->from, $period->to)
+        $byDay = OrderAnalytics::orders($period->from, $period->to, $period->payment)
             ->countBy(fn (Order $o) => (int) $o->created_at->format('N'));
 
         // скільки разів кожен день тижня трапився в періоді — щоб рахувати середнє, а не суму

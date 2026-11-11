@@ -46,11 +46,11 @@ class OrdersChart extends ChartWidget
     {
         $period = OrderPeriod::fromFilters($this->pageFilters);
         $buckets = $period->buckets();
-        $current = $this->values(OrderAnalytics::orders($period->from, $period->to), $period, array_keys($buckets));
+        $current = $this->values(OrderAnalytics::orders($period->from, $period->to, $period->payment), $period, array_keys($buckets));
 
         // попередній період накладаємо на ту ж вісь: перший день до першого дня тощо
         $previousPeriod = OrderPeriod::fromFilters(['period' => 'custom', 'from' => $period->previousFrom->toDateString(), 'to' => $period->previousTo->toDateString()], $period->to);
-        $previous = $this->values(OrderAnalytics::orders($period->previousFrom, $period->previousTo), $previousPeriod, array_keys($previousPeriod->buckets()));
+        $previous = $this->values(OrderAnalytics::orders($period->previousFrom, $period->previousTo, $period->payment), $previousPeriod, array_keys($previousPeriod->buckets()));
         // по днях вирівнюємо з початку (у місяцях різна кількість днів), по місяцях — з кінця:
         // попередній період закінчується просто перед поточним, тож його перший місяць може бути неповним
         $previous = $period->isDaily()

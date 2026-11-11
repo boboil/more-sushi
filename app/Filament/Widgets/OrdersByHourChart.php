@@ -25,7 +25,7 @@ class OrdersByHourChart extends ChartWidget
     protected function getData(): array
     {
         $period = OrderPeriod::fromFilters($this->pageFilters);
-        $byHour = OrderAnalytics::orders($period->from, $period->to)
+        $byHour = OrderAnalytics::orders($period->from, $period->to, $period->payment)
             ->countBy(fn (Order $o) => (int) $o->created_at->format('G'));
 
         // показуємо робочий день з запасом; нічні замовлення (якщо є) теж не губимо

@@ -5,7 +5,10 @@ namespace Tests\Feature;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Widgets\Analytics\OrderAnalytics;
 use App\Filament\Widgets\Analytics\OrderPeriod;
+use App\Filament\Widgets\OrderCampaigns;
+use App\Filament\Widgets\OrderSources;
 use App\Filament\Widgets\OrdersByHourChart;
+use App\Filament\Widgets\OrdersByMonth;
 use App\Filament\Widgets\OrdersByWeekdayChart;
 use App\Filament\Widgets\OrdersChart;
 use App\Filament\Widgets\OrderStats;
@@ -128,10 +131,60 @@ class AnalyticsDashboardTest extends TestCase
             ->assertCanNotSeeTableRecords([$roll]);
     }
 
+    public function test_payment_filter_limits_orders(): void
+    {
+        $this->actingAs($this->createManager());
+        $roll = $this->product('Філадельфія');
+        $this->order('2026-10-20 12:30', 700, '0991112233', [$roll->id => 3]);
+        $this->order('2026-10-19 19:10', 300, '0671234567', [$roll->id => 1], 'самовивiz', 'термінал');
+
+        $p = OrderPeriod::fromFilters(['period' => 'last_7', 'payment' => 'термінал']);
+        $this->assertSame(1, OrderAnalytics::orders($p->from, $p->to, $p->payment)->count());
+        $this->assertNull(OrderPeriod::fromFilters(['payment' => 'bitcoin'])->payment);
+
+        Livewire::test(OrderStats::class, ['pageFilters' => ['period' => 'last_7', 'payment' => 'термінал']])
+            ->assertSee('300 грн')
+            ->assertSee('оплата: термінал')
+            ->assertDontSee('1 000 грн');
+
+        // виручка товару — штуки × поточна ціна (300 грн)
+        Livewire::test(TopProducts::class, ['pageFilters' => ['period' => 'last_7']])->assertSee('1 200 грн');
+        Livewire::test(TopProducts::class, ['pageFilters' => ['period' => 'last_7', 'payment' => 'термінал']])->assertSee('300 грн')->assertDontSee('1 200 грн');
+    }
+
+    public function test_sources_campaigns_and_months(): void
+    {
+        $this->actingAs($this->createManager());
+        $this->order('2026-10-20 12:30', 700, '0991112233', attribution: ['source' => 'chatgpt', 'medium' => 'cpc', 'campaign' => 'rolls-test-nov']);
+        $this->order('2026-10-19 19:10', 300, '0671234567', attribution: ['referrer' => 'www.google.com']);
+        $this->order('2026-10-18 19:10', 500, '0501234567');
+        $this->order('2026-02-03 10:00', 400, '0501234567');
+
+        $filters = ['period' => 'last_7'];
+
+        Livewire::test(OrderSources::class, ['pageFilters' => $filters])
+            ->assertSee('chatgpt / cpc')
+            ->assertSee('google / organic')
+            ->assertSee('Без міток')
+            ->assertSee('33,3%');
+
+        Livewire::test(OrderCampaigns::class, ['pageFilters' => $filters])
+            ->assertSee('chatgpt · rolls-test-nov')
+            ->assertSee('700 грн');
+
+        // 12 місяців: з листопада 2025 по жовтень 2026, лютий з одним замовленням
+        Livewire::test(OrdersByMonth::class, ['pageFilters' => $filters])
+            ->assertSee('Жовтень 2026')
+            ->assertSee('Листопад 2025')
+            ->assertSee('Лютий 2026')
+            ->assertSee('1 500 грн')
+            ->assertDontSee('Жовтень 2025');
+    }
+
     /**
      * @param  array<int, int>  $products
      */
-    private function order(string $at, float $sum, string $phone, array $products = [], string $delivery = 'курʼєр', string $payment = 'готівка'): Order
+    private function order(string $at, float $sum, string $phone, array $products = [], string $delivery = 'курʼєр', string $payment = 'готівка', ?array $attribution = null): Order
     {
         $order = new Order([
             'customer_name' => 'Тест',
@@ -146,6 +199,7 @@ class AnalyticsDashboardTest extends TestCase
             'time' => $at,
             'sum' => $sum,
         ]);
+        $order->attribution = $attribution;
         $order->created_at = $at;
         $order->updated_at = $at;
         $order->save();

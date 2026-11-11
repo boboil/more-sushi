@@ -19,11 +19,12 @@ final class OrderAnalytics
     /**
      * @return Collection<int, Order>
      */
-    public static function orders(CarbonImmutable $from, CarbonImmutable $to): Collection
+    public static function orders(CarbonImmutable $from, CarbonImmutable $to, ?string $payment = null): Collection
     {
         return Order::query()
             ->whereBetween('created_at', [$from, $to])
-            ->get(['id', 'created_at', 'sum', 'customer_phone', 'customer_delivery_type', 'online_payment']);
+            ->when($payment, fn ($q) => $q->where('online_payment', $payment))
+            ->get(['id', 'created_at', 'sum', 'customer_phone', 'customer_delivery_type', 'online_payment', 'attribution']);
     }
 
     /**
@@ -51,6 +52,35 @@ final class OrderAnalytics
             'customers' => $phones->count(),
             'newCustomers' => $phones->reject(fn (string $p) => $known->has($p))->count(),
         ];
+    }
+
+    /**
+     * Групує замовлення за підписом (канал, кампанія, місяць) у рядки для таблиць.
+     * Замовлення, для яких $label повертає null, пропускаються.
+     *
+     * @param  Collection<int, Order>  $orders
+     * @param  callable(Order): ?string  $label
+     * @return array<string, array{key: string, label: string, orders: int, revenue: float, average: float, share: float}>
+     */
+    public static function breakdown(Collection $orders, callable $label): array
+    {
+        $total = $orders->count();
+        $rows = [];
+        foreach ($orders->groupBy(fn (Order $o) => $label($o) ?? '')->forget('') as $name => $group) {
+            $count = $group->count();
+            $revenue = (float) $group->sum('sum');
+            $rows[$name] = [
+                'key' => (string) $name,
+                'label' => (string) $name,
+                'orders' => $count,
+                'revenue' => $revenue,
+                'average' => $count ? $revenue / $count : 0.0,
+                'share' => $total ? $count / $total * 100 : 0.0,
+            ];
+        }
+        uasort($rows, fn (array $a, array $b) => [$b['orders'], $b['revenue']] <=> [$a['orders'], $a['revenue']]);
+
+        return $rows;
     }
 
     /**
