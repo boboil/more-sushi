@@ -108,6 +108,36 @@ class FilamentAdminPanelTest extends TestCase
         $this->assertSame($password, $admin->fresh()->password);
     }
 
+    public function test_order_shows_ad_campaign(): void
+    {
+        $this->actingAs($this->createAdmin());
+        $order = new Order([
+            'customer_name' => 'Клієнт з реклами',
+            'customer_phone' => '380000000001',
+            'customer_delivery_type' => 'курʼєр',
+            'customer_street' => 'Центральна',
+            'customer_building' => '1',
+            'online_payment' => 'готівка',
+            'time' => now(),
+            'sum' => 500,
+        ]);
+        $attribution = ['source' => 'facebook', 'medium' => 'cpc', 'campaign' => 'akciya-ponedilok', 'content' => 'story-1', 'landing_page' => '/promo/ponedilok'];
+        $order->attribution = $attribution;
+        $order->save();
+
+        $this->get('/admin/orders')->assertOk()->assertSee('facebook / cpc')->assertSee('akciya-ponedilok');
+        $this->get('/admin/orders/' . $order->getKey() . '/edit')->assertOk()
+            ->assertSee('Рекламна кампанія')->assertSee('story-1')->assertSee('/promo/ponedilok');
+        $this->get('/admin/orders/create')->assertOk()->assertDontSee('Рекламна кампанія');
+
+        Livewire::test(EditOrder::class, ['record' => $order->getKey()])
+            ->set('data.sum', 550)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame($attribution, $order->fresh()->attribution);
+    }
+
     private function createAdmin(): User
     {
         return $this->createUserWithRole('admin', 'Адміністратор');
