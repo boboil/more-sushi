@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Shop\Category;
 use App\Models\Shop\Product;
 use App\Models\User;
+use App\Services\PosterProductSync;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -97,51 +98,31 @@ class PosterAuthController extends Controller
         return $filename;
     }
 
+    /**
+     * Синхронізація товарів з Poster: див. App\Services\PosterProductSync.
+     */
     public function getProducts(Request $request)
     {
-        //todo key is poster category id value is site category id
-        $categories_id = [3 => 5, 5 => 1, 7 => 3, 15 => 4, 18 => 6, 26 => 8, 23 => 7];
+        $plan = app(PosterProductSync::class)->run();
 
-        foreach ($categories_id as $key => $category_id) {
-            $category_site_id = $category_id;
-            $url = 'https://joinposter.com/api/menu.getProducts';
-            $data = http_build_query([
-                'token' => $this->token,
-                'category_id' => $key,
-                'type' => 'batchtickets'
-//            'type' => 'product'
-            ]);
-            $fullUrl = $url . '?' . $data;
-            $data = $this->sendRequest($fullUrl);
-            foreach ($data['response'] as $item) {
-                $product = Product::getProductsByPosterId($item['product_id']);
-                if ($product) {
-//                    $product->poster_id = $item['product_id'];
-                    $product->price = $this->transformPrice($item['price']['4']);
-                    $product->main_image = $this->saveImage($item['photo_origin']);
-                    $product->save();
-                } else {
-                    $product = new Product();
-                    $product->title = $item['product_name'];
-                    $product->price = $this->transformPrice($item['price']['4']);
-                    $product->count = 1;
-                    $product->weight = $item['out'];
-//                        $product->consist = $this->trasformIngridients($item['ingredients']);
-                    $product->consist = '';
-                    $product->stock = 0;
-                    $product->latest = 0;
-                    $product->main_image = $this->saveImage($item['photo_origin']);
-                    $product->description = $item['product_production_description'];
-                    $product->slug = Str::slug($item['product_name']);
-                    $product->isRelated = 0;
-                    $product->poster_id = $item['product_id'];
-                    $product->save();
-                    $product->category()->attach($category_site_id);
+        return response()->json([
+            'status' => 'ok',
+            'enabled' => $plan['enable']->count(),
+            'disabled' => $plan['disable']->count(),
+            'created' => $plan['create']->count(),
+        ]);
+    }
 
-                }
-            }
-        }
-        return response()->json(['status' => 'ok']);
+    /**
+     * Товари категорії Poster (як і раніше, type=batchtickets).
+     */
+    public function menuProducts(int $posterCategoryId): mixed
+    {
+        return $this->sendRequest('https://joinposter.com/api/menu.getProducts?' . http_build_query([
+            'token' => $this->token,
+            'category_id' => $posterCategoryId,
+            'type' => 'batchtickets',
+        ]));
     }
 
     public function trasformIngridients($data)
