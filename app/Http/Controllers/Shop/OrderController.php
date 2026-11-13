@@ -9,6 +9,7 @@ use App\Models\Landing\Order as LOrder;
 use App\Models\Shop\Product;
 use Carbon\Carbon;
 use App\Services\Notifications\PosterOrderAlert;
+use App\Services\Promo\PromoDays;
 use App\Services\Statistics\OrderAttribution;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -55,6 +56,9 @@ class OrderController extends Controller
             ];
         }
         $comment = $this->commentToPosterOrder($customer);
+        if ($promoLine = $this->promoDayComment($products->pluck('id')->all(), $request->input('sum'))) {
+            $comment = rtrim($comment) . PHP_EOL . $promoLine;
+        }
         $posterUtil = app(PosterAuthController::class); // через контейнер, щоб у тестах не ходити в Poster
         $posterOrder = $posterUtil->createIncomingOrder($posterOrderProducts, $customer, $delivery, $comment);
 
@@ -99,6 +103,30 @@ class OrderController extends Controller
         $comment .= "Палочки: " . $customer['sticks']['standard'] .' стандартных.'. $customer['sticks']['educational'].' учебных.'.PHP_EOL;
         $comment .= $customer['isAsSoonAsPossible'] == 'true' ? 'Как можно быстрее' : 'На время: '. $time->format('d-m-Y H:i').PHP_EOL;
         return $comment;
+    }
+
+    /**
+     * Рядок для оператора, якщо зараз діє «Акція дня» і вона стосується замовлення:
+     * Poster рахує за своїми цінами, тож знижку з сайту оператор має бачити явно.
+     */
+    public function promoDayComment(array $productIds, mixed $sum): string
+    {
+        $promo = app(PromoDays::class)->current();
+        if (! $promo) {
+            return '';
+        }
+        $matched = $promo->products->whereIn('id', $productIds);
+        // знижка діє лише на товари дня; подарунок без списку товарів — на будь-яке замовлення
+        if ($matched->isEmpty() && ($promo->isPercent() || $promo->products->isNotEmpty())) {
+            return '';
+        }
+        $offer = $promo->isPercent() ? "-{$promo->discount_percent}% {$promo->offer_title}" : trim(($promo->gift_badge ? $promo->gift_badge . ' ' : '') . $promo->offer_title);
+        $line = 'АКЦІЯ ДНЯ (' . $promo->label() . "): {$offer}";
+        if ($matched->isNotEmpty()) {
+            $line .= '. Товари: ' . $matched->pluck('title')->map(fn ($t) => trim($t))->implode(', ');
+        }
+
+        return $line . '. Сума з сайту: ' . $sum . ' грн';
     }
 
     public function index()
