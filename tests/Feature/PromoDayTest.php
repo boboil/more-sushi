@@ -55,6 +55,27 @@ class PromoDayTest extends TestCase
             ->assertJsonPath('days.6.discountPercent', null);
     }
 
+    public function test_preview_key_opens_disabled_landing_data(): void
+    {
+        $promo = app(PromoDays::class);
+        $key = $promo->previewKey();
+        $this->assertSame($key, $promo->previewKey(), 'ключ стабільний');
+
+        $this->getJson('/api/shop/promo-days?preview=wrong')->assertExactJson(['enabled' => false, 'days' => []]);
+        $this->getJson('/api/shop/promo-days?preview=' . $key)
+            ->assertOk()
+            ->assertJsonPath('enabled', false)
+            ->assertJsonPath('preview', true)
+            ->assertJsonCount(7, 'days');
+
+        $friday = PromoDay::query()->where('weekday', 5)->first();
+        $this->assertSame('https://moresushi.in.ua/promo/piatnytsia?preview=' . $key, $promo->previewUrl($friday));
+
+        // перегляд не вмикає знижки в замовленнях
+        Carbon::setTestNow(self::THURSDAY);
+        $this->assertNull($promo->current());
+    }
+
     public function test_current_promo_respects_flag_day_and_hours(): void
     {
         $promo = app(PromoDays::class);
@@ -117,7 +138,7 @@ class PromoDayTest extends TestCase
         $product = $this->product('Філадельфія', 320);
         $friday = PromoDay::query()->where('weekday', 5)->first();
 
-        $this->get('/admin/promo-days')->assertOk()->assertSee('Увімкнути лендинги');
+        $this->get('/admin/promo-days')->assertOk()->assertSee('Увімкнути лендинги')->assertSee('Переглянути')->assertSee('/promo/piatnytsia?preview=', false);
         $this->get('/admin/promo-days/' . $friday->id . '/edit')->assertOk();
 
         Livewire::test(EditPromoDay::class, ['record' => $friday->getKey()])

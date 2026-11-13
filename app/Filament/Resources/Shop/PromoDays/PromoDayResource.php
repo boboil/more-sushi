@@ -6,6 +6,8 @@ use App\Filament\Resources\Shop\PromoDays\Pages\EditPromoDay;
 use App\Filament\Resources\Shop\PromoDays\Pages\ListPromoDays;
 use App\Models\Shop\PromoDay;
 use BackedEnum;
+use App\Services\Promo\PromoDays;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
@@ -91,7 +93,15 @@ class PromoDayResource extends Resource
                 TextColumn::make('products_count')->label('Товарів')->counts('products'),
                 ToggleColumn::make('is_active')->label('Діє'),
             ])
-            ->recordActions([EditAction::make()])
+            ->recordActions([
+                Action::make('preview')
+                    ->label('Переглянути')
+                    ->icon(Heroicon::OutlinedEye)
+                    ->color('gray')
+                    ->url(fn (PromoDay $record) => app(PromoDays::class)->previewUrl($record))
+                    ->openUrlInNewTab(),
+                EditAction::make(),
+            ])
             ->toolbarActions([]);
     }
 

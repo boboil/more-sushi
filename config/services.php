@@ -50,6 +50,10 @@ return [
     ],
 
     // Службова група для тривог (наприклад, Poster не прийняв замовлення)
+    'front' => [
+        'url' => env('FRONT_URL', 'https://moresushi.in.ua'),
+    ],
+
     'telegram' => [
         'bot_token' => env('TELEGRAM_BOT_TOKEN'),
         'alert_chat_id' => env('TELEGRAM_ALERT_CHAT_ID'),

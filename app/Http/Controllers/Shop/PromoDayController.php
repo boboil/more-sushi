@@ -6,20 +6,25 @@ use App\Http\Controllers\Controller;
 use App\Models\Shop\PromoDay;
 use App\Services\Promo\PromoDays;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
- * Дані для лендингів «Акція дня». Коли лендинги вимкнені в адмінці — порожній список.
+ * Дані для лендингів «Акція дня». Коли лендинги вимкнені в адмінці — порожній список,
+ * крім попереднього перегляду з адмінки (?preview=<ключ>).
  */
 class PromoDayController extends Controller
 {
-    public function index(PromoDays $promoDays): JsonResponse
+    public function index(Request $request, PromoDays $promoDays): JsonResponse
     {
-        if (! $promoDays->enabled()) {
+        $enabled = $promoDays->enabled();
+        $preview = $promoDays->isPreview($request->query('preview'));
+        if (! $enabled && ! $preview) {
             return new JsonResponse(['enabled' => false, 'days' => []]);
         }
 
         return new JsonResponse([
-            'enabled' => true,
+            'enabled' => $enabled,
+            'preview' => $preview,
             'days' => $promoDays->all()->map(fn (PromoDay $day) => [
                 'weekday' => $day->weekday,
                 'key' => PromoDay::DAYS[$day->weekday]['key'],

@@ -11,6 +11,9 @@ class SiteSetting extends Model
 {
     public const PROMO_LANDING_ENABLED = 'promo_landing_enabled';
 
+    /** Секрет для перегляду лендингів з адмінки, поки вони вимкнені */
+    public const PROMO_PREVIEW_KEY = 'promo_preview_key';
+
     protected $table = 'site_settings';
 
     protected $primaryKey = 'key';
