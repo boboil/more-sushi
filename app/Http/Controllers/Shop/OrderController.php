@@ -8,6 +8,7 @@ use App\Models\Shop\Order;
 use App\Models\Landing\Order as LOrder;
 use App\Models\Shop\Product;
 use Carbon\Carbon;
+use App\Services\Notifications\PosterOrderAlert;
 use App\Services\Statistics\OrderAttribution;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -76,6 +77,10 @@ class OrderController extends Controller
         $order->save();
         foreach ($products as $product) {
             $order->products()->attach($product['id'], ['shop_product_quantity' => $product['quantity']]);
+        }
+        // Клієнту все одно відповідаємо «прийнято», а оператору шлемо тривогу в Telegram
+        if (! PosterOrderAlert::accepted($posterOrder)) {
+            app(PosterOrderAlert::class)->report($order, $posterOrder);
         }
         return new JsonResponse([
             'data' => $order,

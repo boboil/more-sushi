@@ -49,6 +49,12 @@ return [
         'channel_id' => env('YOUTUBE_CHANNEL_ID', 'UCSMjVdmMHYrtbW9rWWpEnMA'),
     ],
 
+    // Службова група для тривог (наприклад, Poster не прийняв замовлення)
+    'telegram' => [
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'alert_chat_id' => env('TELEGRAM_ALERT_CHAT_ID'),
+    ],
+
     'ffmpeg' => [
         'ffmpeg' => env('FFMPEG_BIN', 'ffmpeg'),
         'ffprobe' => env('FFPROBE_BIN', 'ffprobe'),
