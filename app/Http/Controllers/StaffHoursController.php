@@ -26,7 +26,7 @@ class StaffHoursController extends Controller
 
         $records = WorkingHours::query()
             ->where('user_id', $user->id)
-            ->whereBetween('working_day', [$start->toDateString(), $end->toDateString()])
+            ->whereDate('working_day', '>=', $start->toDateString())->whereDate('working_day', '<=', $end->toDateString())
             ->get()
             ->keyBy(fn (WorkingHours $h) => $h->working_day->toDateString());
 

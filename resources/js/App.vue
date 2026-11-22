@@ -11,6 +11,7 @@
                     <router-link to="/products" class="nav-item nav-link" v-if="isLoggedIn">Ролы</router-link>
                     <router-link to="/current-orders" class="nav-item nav-link" v-if="isLoggedIn">Текущие заказы</router-link>
                     <router-link to="/my-hours" class="nav-item nav-link" v-if="isLoggedIn">Мої години</router-link>
+                    <router-link to="/cash" class="nav-item nav-link" v-if="canEnterCash">Каса</router-link>
                     <a href="/admin" class="nav-item nav-link" v-if="isSuperAdmin">Admin Panel</a>
                     <a href="#" class="nav-item nav-link ml-auto" v-if="isLoggedIn" @click="logout">Вийти</a>
                 </b-nav>
@@ -30,12 +31,14 @@ export default {
         return {
             isLoggedIn: false,
             isSuperAdmin: false,
+            canEnterCash: false,
         }
     },
     created() {
         if (window.Laravel.isLoggedin) {
             this.isLoggedIn = true
             this.isSuperAdmin = !!window.Laravel.isSuperAdmin
+            this.canEnterCash = !!window.Laravel.canEnterCash
         }
     },
     methods: {

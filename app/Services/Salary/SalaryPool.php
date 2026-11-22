@@ -42,7 +42,7 @@ class SalaryPool
     public function applyPercentToMonth(CarbonInterface $month, float $percent): void
     {
         SalaryDay::query()
-            ->whereBetween('date', [$month->copy()->startOfMonth()->toDateString(), $month->copy()->endOfMonth()->toDateString()])
+            ->whereDate('date', '>=', $month->copy()->startOfMonth()->toDateString())->whereDate('date', '<=', $month->copy()->endOfMonth()->toDateString())
             ->update(['pool_percent' => $percent]);
     }
 
@@ -118,12 +118,12 @@ class SalaryPool
         $end = $start->endOfMonth();
 
         $cashByDate = SalaryDay::query()
-            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->whereDate('date', '>=', $start->toDateString())->whereDate('date', '<=', $end->toDateString())
             ->get()
             ->keyBy(fn (SalaryDay $d) => $d->date->toDateString());
 
         $hours = WorkingHours::query()
-            ->whereBetween('working_day', [$start->toDateString(), $end->toDateString()])
+            ->whereDate('working_day', '>=', $start->toDateString())->whereDate('working_day', '<=', $end->toDateString())
             ->where('hours', '>', 0)
             ->get();
 

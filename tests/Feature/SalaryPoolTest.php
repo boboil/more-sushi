@@ -121,6 +121,30 @@ class SalaryPoolTest extends TestCase
         $this->assertSame(9.0, WorkingHours::query()->where('user_id', $colleague->id)->value('hours'));
     }
 
+    public function test_cashier_enters_cash_from_front(): void
+    {
+        Carbon::setTestNow('2026-09-10 21:00:00');
+        $cashier = $this->employee('Касир', $this->role('manager', 'кассир', 1.0));
+        $cook = $this->employee('Кухар', $this->role('sushi', 'Сушист', 1.0));
+
+        $this->actingAs($cook)->withoutMiddleware(VerifyCsrfToken::class);
+        $this->getJson('/staff/cash')->assertForbidden();
+        $this->postJson('/staff/cash', ['date' => '2026-09-10', 'cash' => 1000])->assertForbidden();
+
+        $this->actingAs($cashier);
+        $this->getJson('/staff/cash')->assertOk()->assertJsonPath('days.0.date', '2026-09-10')->assertJsonCount(8, 'days');
+        $this->postJson('/staff/cash', ['date' => '2026-09-10', 'cash' => 48250.5])
+            ->assertOk()
+            ->assertJsonPath('days.0.cash', 48250.5);
+        $this->assertSame($cashier->id, SalaryDay::query()->value('entered_by'));
+
+        $this->postJson('/staff/cash', ['date' => '2026-09-11', 'cash' => 1])->assertStatus(422);
+        $this->postJson('/staff/cash', ['date' => '2026-09-02', 'cash' => 1])->assertStatus(422);
+
+        $this->postJson('/staff/cash', ['date' => '2026-09-10', 'cash' => null])->assertOk()->assertJsonPath('days.0.cash', null);
+        $this->assertSame(0, SalaryDay::query()->count());
+    }
+
     public function test_admin_page_saves_day_and_keeps_self_marks(): void
     {
         Carbon::setTestNow('2026-09-05 12:00:00');
