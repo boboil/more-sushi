@@ -3,6 +3,9 @@
 namespace Tests\Feature;
 
 use App\Filament\Resources\Shop\Orders\Pages\EditOrder;
+use App\Filament\Resources\Roles\Pages\CreateRole;
+use App\Filament\Resources\Roles\Pages\EditRole;
+use App\Filament\Resources\Roles\RoleResource;
 use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Pages\DeliverySettings;
 use App\Models\Role;
@@ -36,6 +39,35 @@ class FilamentAdminPanelTest extends TestCase
         $this->actingAs($manager)->get('/admin')->assertOk();
         $this->get('/admin/products')->assertOk();
         $this->get('/admin/users')->assertForbidden();
+        $this->get('/admin/roles')->assertForbidden();
+    }
+
+    public function test_admin_creates_role_sets_rate_and_assigns_staff(): void
+    {
+        $admin = $this->createAdmin();
+        $worker = User::factory()->create(['name' => 'Працівник']);
+        $this->actingAs($admin)->get('/admin/roles')->assertOk();
+
+        Livewire::test(CreateRole::class)
+            ->set('data.label', 'Кухар')->set('data.salary_coefficient', 0.8)->set('data.users', [$worker->id])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $role = Role::query()->where('label', 'Кухар')->firstOrFail();
+        $this->assertMatchesRegularExpression('/^[a-z0-9_]+$/', $role->name);
+        $this->assertSame(0.8, (float) $role->salary_coefficient);
+        $this->assertSame(0.8, $worker->fresh()->salaryCoefficient());
+
+        Livewire::test(EditRole::class, ['record' => $role->getKey()])
+            ->set('data.salary_coefficient', 1.1)
+            ->call('save')
+            ->assertHasNoFormErrors();
+        $this->assertSame(1.1, (float) $role->fresh()->salary_coefficient);
+        $this->get('/admin/roles/' . $role->getKey() . '/edit')->assertOk();
+
+        $adminRole = Role::query()->where('name', 'admin')->firstOrFail();
+        $this->assertFalse(RoleResource::canDelete($adminRole));
+        $this->assertTrue(RoleResource::canDelete($role));
     }
 
     public function test_migrated_admin_pages_and_order_product_editor_render(): void
