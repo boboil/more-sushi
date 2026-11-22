@@ -148,6 +148,25 @@ class SalaryPoolTest extends TestCase
         $this->assertSame(9.0, WorkingHours::query()->where('user_id', $colleague->id)->value('hours'));
     }
 
+    public function test_first_month_backfill_window(): void
+    {
+        $me = $this->employee('Я', $this->role('sushi', 'Сушист', 1.0));
+        $this->actingAs($me)->withoutMiddleware(VerifyCsrfToken::class);
+
+        // листопад — запуск: можна з 1 листопада, хоч це давніше тижня
+        Carbon::setTestNow('2026-11-23 12:00:00');
+        $this->getJson('/staff/hours?month=2026-11')->assertOk()->assertJsonPath('editFrom', '2026-11-01')->assertJsonPath('days.0.editable', true);
+        $this->postJson('/staff/hours', ['date' => '2026-11-01', 'hours' => 8])->assertOk();
+        $this->postJson('/staff/hours', ['date' => '2026-10-31', 'hours' => 8])->assertStatus(422);
+
+        // 30.11 ще відкрито, з грудня — знову лише 7 днів
+        Carbon::setTestNow('2026-11-30 23:00:00');
+        $this->postJson('/staff/hours', ['date' => '2026-11-02', 'hours' => 8])->assertOk();
+        Carbon::setTestNow('2026-12-01 09:00:00');
+        $this->postJson('/staff/hours', ['date' => '2026-11-03', 'hours' => 8])->assertStatus(422);
+        $this->postJson('/staff/hours', ['date' => '2026-11-24', 'hours' => 8])->assertOk();
+    }
+
     public function test_admin_page_saves_day_and_keeps_self_marks(): void
     {
         Carbon::setTestNow('2026-09-05 12:00:00');

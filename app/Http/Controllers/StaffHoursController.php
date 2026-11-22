@@ -48,6 +48,7 @@ class StaffHoursController extends Controller
             'month' => $start->format('Y-m'),
             'today' => CarbonImmutable::today()->toDateString(),
             'editDays' => SalaryPool::SELF_EDIT_DAYS,
+            'editFrom' => $this->pool->selfEditFrom()->toDateString(),
             'totalHours' => round($records->sum('hours'), 2),
             'days' => $days,
         ]);
@@ -67,7 +68,7 @@ class StaffHoursController extends Controller
             return response()->json([
                 'message' => $existing && $existing->source !== WorkingHours::SOURCE_SELF
                     ? 'Години за цей день уже вніс адміністратор — зверніться до нього, щоб змінити.'
-                    : 'Можна вносити години лише за останні ' . SalaryPool::SELF_EDIT_DAYS . ' днів і не наперед.',
+                    : 'Можна вносити години лише з ' . $this->pool->selfEditFrom()->format('d.m') . ' і не наперед.',
             ], 422);
         }
 

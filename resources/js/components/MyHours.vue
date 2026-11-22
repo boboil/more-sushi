@@ -35,7 +35,7 @@
             </div>
 
             <p class="mh-note">
-                Можна вносити години за сьогодні і за останні {{ data ? data.editDays : 7 }} днів.
+                Можна вносити години за сьогодні і за попередні дні, починаючи з {{ data && data.editFrom ? dateLabel(data.editFrom) : 'останніх 7 днів' }}.
                 <span class="mh-legend admin"></span> — години вніс адміністратор, змінити їх може лише він.
             </p>
 

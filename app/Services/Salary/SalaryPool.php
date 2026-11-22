@@ -28,6 +28,14 @@ class SalaryPool
 
     public const MAX_HOURS = 24;
 
+    /**
+     * Перший місяць після запуску: до BACKFILL_UNTIL працівники можуть вносити години
+     * за будь-який день починаючи з BACKFILL_FROM (ще ніхто нічого не заповнював).
+     */
+    public const BACKFILL_FROM = '2026-11-01';
+
+    public const BACKFILL_UNTIL = '2026-11-30';
+
     public function percent(): float
     {
         return (float) SiteSetting::get(self::PERCENT_SETTING, (string) self::DEFAULT_PERCENT);
@@ -79,12 +87,25 @@ class SalaryPool
         $today = CarbonImmutable::today();
         $day = CarbonImmutable::parse($date->toDateString());
 
-        if ($day->greaterThan($today) || $day->lessThan($today->subDays(self::SELF_EDIT_DAYS))) {
+        if ($day->greaterThan($today) || $day->lessThan($this->selfEditFrom())) {
             return false;
         }
 
         // години, які виставив адміністратор, працівник уже не переписує
         return $existing === null || $existing->source === WorkingHours::SOURCE_SELF;
+    }
+
+    /** Найраніша дата, за яку працівник ще може сам внести години. */
+    public function selfEditFrom(): CarbonImmutable
+    {
+        $today = CarbonImmutable::today();
+        $from = $today->subDays(self::SELF_EDIT_DAYS);
+
+        if ($today->lessThanOrEqualTo(CarbonImmutable::parse(self::BACKFILL_UNTIL))) {
+            $from = $from->min(CarbonImmutable::parse(self::BACKFILL_FROM));
+        }
+
+        return $from;
     }
 
     /** Працівники, що беруть участь у розподілі: є роль з коефіцієнтом. */
