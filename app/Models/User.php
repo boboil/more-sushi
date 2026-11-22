@@ -26,7 +26,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *
- * @property Collection|WorkingHours[] $workingDays The user associated with the working hours.
+ * @property Collection|WorkingHours[] $workingHours
  * @property Collection|Role[] $roles The user associated with the roles.
  */
 class User extends Authenticatable implements FilamentUser
@@ -94,12 +94,22 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->belongsToMany(Role::class);
     }
-    public static function getAllWorkers()
+    /**
+     * Коефіцієнт для розподілу фонду зарплати: найбільший серед ролей користувача, 0 — не бере участі.
+     */
+    public function salaryCoefficient(): float
     {
-        return User::whereDoesntHave('roles', function ($query) {
-            $query->where('name', 'admin');
-        })->with('roles');
+        return (float) ($this->roles->max(fn (Role $role) => (float) $role->salary_coefficient) ?? 0);
     }
+
+    /** Посада, з якої взято коефіцієнт (для підпису в таблиці). */
+    public function salaryRoleLabel(): ?string
+    {
+        $role = $this->roles->filter(fn (Role $role) => $role->salary_coefficient !== null)->sortByDesc(fn (Role $role) => (float) $role->salary_coefficient)->first();
+
+        return $role?->label ?? $role?->name;
+    }
+
     public function workingHours(): HasMany
     {
         return $this->hasMany(WorkingHours::class);

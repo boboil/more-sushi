@@ -10,6 +10,7 @@
                     <router-link to="/login" class="nav-item nav-link" v-if="!isLoggedIn">Login</router-link>
                     <router-link to="/products" class="nav-item nav-link" v-if="isLoggedIn">Ролы</router-link>
                     <router-link to="/current-orders" class="nav-item nav-link" v-if="isLoggedIn">Текущие заказы</router-link>
+                    <router-link to="/my-hours" class="nav-item nav-link" v-if="isLoggedIn">Мої години</router-link>
                     <a href="/admin" class="nav-item nav-link" v-if="isLoggedIn">Admin Panel</a>
                 </b-nav>
             </b-card-header>

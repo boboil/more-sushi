@@ -70,8 +70,6 @@ class FilamentAdminPanelTest extends TestCase
             '/admin/questions',
             '/admin/landing-orders',
             '/admin/users',
-            '/admin/rates',
-            '/admin/working-hours',
             '/admin/delivery',
         ] as $url) {
             $this->get($url)->assertOk();

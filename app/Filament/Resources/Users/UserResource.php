@@ -48,7 +48,6 @@ class UserResource extends Resource
                         ->required(fn (string $operation): bool => $operation === 'create')
                         ->dehydrated(fn (?string $state): bool => filled($state))
                         ->minLength(6),
-                    TextInput::make('rate')->label('Ставка за годину, UAH')->numeric()->step(0.1)->required(),
                     TextInput::make('poster_user_id')->label('ID користувача в Poster')->numeric()->required(),
                     Select::make('roles')->label('Ролі')->relationship('roles', 'label')->multiple()->preload()->searchable(),
                 ])->columns(2)->columnSpanFull(),
@@ -64,7 +63,6 @@ class UserResource extends Resource
                     ->label('Імʼя')
                     ->searchable(),
                 TextColumn::make('email')->label('E-mail')->searchable(),
-                TextColumn::make('rate')->label('Ставка за годину')->numeric(),
                 TextColumn::make('roles.label')->label('Ролі')->badge(),
             ])
             ->filters([

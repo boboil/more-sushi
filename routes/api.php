@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Api\SalaryController;
 use App\Http\Controllers\Shop\DeliveryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -44,8 +43,6 @@ Route::post('admin-update-product', [AdminOrderController::class, 'updateProduct
 Route::delete('admin-remove-order/{order_id}', [AdminOrderController::class, 'removeOrder']);
 Route::delete('admin-remove-product/{product_id}', [AdminOrderController::class, 'removeProduct']);
 Route::get('products', [AdminOrderController::class, 'getProducts']);
-Route::post('get-employees-working-hours', [SalaryController::class, 'getEmployeesWorkingHours']);
-Route::post('get-working-hours-by-day', [SalaryController::class, 'getWorkingHoursByDay']);
 Route::get('get-status-orders', [\App\Http\Controllers\Api\OrderController::class, 'statusOrdersSpots'])->name('statusOrdersSpots');
 
 Route::prefix('shop')->group(function () {

@@ -5,7 +5,6 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Class Role
@@ -13,14 +12,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $id
  * @property string $name
  * @property string|null $label
+ * @property string|null $salary_coefficient Коефіцієнт посади для розподілу фонду зарплати
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- *
- * @property Rate $rate The rate associated with the role.
  */
 class Role extends Model
 {
-    protected $fillable = ['name', 'label'];
+    protected $fillable = ['name', 'label', 'salary_coefficient'];
+
+    protected $casts = ['salary_coefficient' => 'decimal:2'];
 
     public function permissions(): BelongsToMany
     {
@@ -48,8 +48,4 @@ class Role extends Model
         return $this->belongsToMany(User::class);
     }
 
-    public function rates(): HasMany
-    {
-        return $this->hasMany(Rate::class);
-    }
 }

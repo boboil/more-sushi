@@ -2,37 +2,44 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Class Role
+ * Відпрацьовані години працівника за день (один запис на день).
  *
  * @property int $id
  * @property float $hours
  * @property int $user_id
- * @property Carbon|null $working_day
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon $working_day
+ * @property string $source self | admin | poster
+ * @property int|null $entered_by
  *
- * @property User $user The user associated with the working hours.
- *
+ * @property User $user
  */
-
 class WorkingHours extends Model
 {
     use HasFactory;
 
+    public const SOURCE_SELF = 'self';
+    public const SOURCE_ADMIN = 'admin';
+    public const SOURCE_POSTER = 'poster';
+
     protected $table = 'working_hours';
+
     protected $fillable = [
         'working_day',
         'user_id',
         'hours',
+        'source',
+        'entered_by',
     ];
 
-    protected $casts = ['working_day' => 'date'];
+    protected $casts = [
+        'working_day' => 'date',
+        'hours' => 'float',
+    ];
 
     public function user(): BelongsTo
     {

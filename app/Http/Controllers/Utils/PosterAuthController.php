@@ -160,25 +160,6 @@ class PosterAuthController extends Controller
         return $this->sendRequest($url, $incoming_order, 'post');
     }
 
-    public function getUsersWorkingHours(Carbon $dateFrom, Carbon $dateTo)
-    {
-        $url = $this->baseUrl . 'dash.getWaitersSales'
-            . '?token=' . $this->token . '&dateFrom=' . $dateFrom->format('Ymd') . '&dateTo=' . $dateTo->format('Ymd');
-        $response = $this->sendRequest($url);
-        $employees = User::getAllWorkers()->get();
-        if (!is_null($response) && isset($response['response'])) {
-            $responseCollection = collect($response['response']);
-            return $responseCollection->map(function ($item) use ($employees) {
-                $user = $employees->firstWhere('poster_user_id', $item['user_id']);
-                if ($user) {
-                    return collect($user->toArray())->merge(collect($item));
-                }
-                return null;
-            })->filter();
-        }
-        return collect();
-    }
-
     function sendRequest($url, $data = [], $method = 'get')
     {
         $ch = curl_init();
