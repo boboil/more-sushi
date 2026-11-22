@@ -11,7 +11,8 @@
                     <router-link to="/products" class="nav-item nav-link" v-if="isLoggedIn">Ролы</router-link>
                     <router-link to="/current-orders" class="nav-item nav-link" v-if="isLoggedIn">Текущие заказы</router-link>
                     <router-link to="/my-hours" class="nav-item nav-link" v-if="isLoggedIn">Мої години</router-link>
-                    <a href="/admin" class="nav-item nav-link" v-if="isLoggedIn">Admin Panel</a>
+                    <a href="/admin" class="nav-item nav-link" v-if="isSuperAdmin">Admin Panel</a>
+                    <a href="#" class="nav-item nav-link ml-auto" v-if="isLoggedIn" @click="logout">Вийти</a>
                 </b-nav>
             </b-card-header>
 
@@ -28,29 +29,22 @@ export default {
     data() {
         return {
             isLoggedIn: false,
+            isSuperAdmin: false,
         }
     },
     created() {
         if (window.Laravel.isLoggedin) {
             this.isLoggedIn = true
+            this.isSuperAdmin = !!window.Laravel.isSuperAdmin
         }
     },
     methods: {
         logout(e) {
             e.preventDefault()
-            this.$axios.get('/sanctum/csrf-cookie').then(response => {
-                this.$axios.post('/api/logout')
-                    .then(response => {
-                        if (response.data.success) {
-                            window.location.href = "/"
-                        } else {
-                            console.log(response)
-                        }
-                    })
-                    .catch(function (error) {
-                        console.error(error);
-                    });
-            })
+            const meta = document.querySelector('meta[name="csrf-token"]')
+            this.$axios.post('/logout', {}, { headers: { 'X-CSRF-TOKEN': meta ? meta.content : '', Accept: 'application/json' } })
+                .catch(() => {})
+                .finally(() => { window.location.href = '/login' })
         }
     },
 }

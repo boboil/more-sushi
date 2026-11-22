@@ -20,6 +20,7 @@
     @php
         $user_auth_data = [
             'isLoggedin' => true,
+            'isSuperAdmin' => Auth::user()->isSuperAdmin(),
             'user' =>  Auth::user()
         ];
     @endphp
