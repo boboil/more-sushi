@@ -21,7 +21,6 @@
         $user_auth_data = [
             'isLoggedin' => true,
             'isSuperAdmin' => Auth::user()->isSuperAdmin(),
-            'canEnterCash' => \App\Http\Controllers\StaffCashController::allowed(Auth::user()),
             'user' =>  Auth::user()
         ];
     @endphp

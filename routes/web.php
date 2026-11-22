@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AppController;
-use App\Http\Controllers\StaffCashController;
 use App\Http\Controllers\StaffHoursController;
 use App\Http\Controllers\Utils\PosterAuthController;
 
@@ -33,9 +32,6 @@ Route::get('get-menu', [PosterAuthController::class, 'getMenu']);
 Route::middleware('auth')->prefix('staff')->group(function () {
     Route::get('hours', [StaffHoursController::class, 'index']);
     Route::post('hours', [StaffHoursController::class, 'store']);
-    // каса дня: кассир або super admin
-    Route::get('cash', [StaffCashController::class, 'index']);
-    Route::post('cash', [StaffCashController::class, 'store']);
 });
 Route::get('/{any}', [AppController::class, 'index'])
     ->where('any', '^(?!admin(?:/|$)).*');

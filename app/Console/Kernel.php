@@ -15,7 +15,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        // каса для зарплати з Poster (працює, якщо на сервері є cron зі schedule:run)
+        $schedule->command('salary:sync-cash')->hourly();
     }
 
     /**

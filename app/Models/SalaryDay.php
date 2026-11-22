@@ -17,12 +17,13 @@ class SalaryDay extends Model
 {
     protected $table = 'salary_days';
 
-    protected $fillable = ['date', 'cash', 'pool_percent', 'entered_by'];
+    protected $fillable = ['date', 'cash', 'pool_percent', 'entered_by', 'synced_at'];
 
     protected $casts = [
         'date' => 'date',
         'cash' => 'decimal:2',
         'pool_percent' => 'decimal:2',
+        'synced_at' => 'datetime',
     ];
 
     public function pool(): float

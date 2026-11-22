@@ -26,7 +26,6 @@ import ProductsTable from './components/ProductsTable.vue'
 import IndexComponent from './components/shop/IndexComponent.vue'
 import YesterdayOrders from './components/YesterdayOrders'
 import MyHours from './components/MyHours'
-import DayCash from './components/DayCash'
 import Login from './auth/Login.vue';
 import OrdersStatus from "./components/OrdersStatus";
 
@@ -62,11 +61,7 @@ const routes = [
         path: '/my-hours',
         component: MyHours
     },
-    {
-        name: 'cash',
-        path: '/cash',
-        component: DayCash
-    },
+
     {
         name: 'login',
         path: '/login',

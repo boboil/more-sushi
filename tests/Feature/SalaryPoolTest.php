@@ -3,16 +3,19 @@
 namespace Tests\Feature;
 
 use App\Filament\Pages\Salary;
+use App\Http\Controllers\Utils\PosterAuthController;
 use App\Http\Middleware\VerifyCsrfToken;
 use App\Models\Role;
 use App\Models\SalaryDay;
 use App\Models\User;
 use App\Models\WorkingHours;
+use App\Services\Salary\PosterCashSync;
 use App\Services\Salary\SalaryPool;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
+use Mockery;
 use Tests\TestCase;
 
 class SalaryPoolTest extends TestCase
@@ -20,6 +23,30 @@ class SalaryPoolTest extends TestCase
     use RefreshDatabase;
 
     private const DAY = '2026-09-01';
+
+    /** Продажі Poster за днями: 'Ymd' => рядки dash.getCategoriesSales; null — помилка Poster. */
+    private array $posterSales = [];
+
+    /** Скільки разів сторінка/синк ходили в Poster. */
+    private int $posterCalls = 0;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $poster = Mockery::mock(PosterAuthController::class);
+        $poster->shouldReceive('getFinanceReport')->andReturnUsing(function (string $from, string $to) {
+            $this->posterCalls++;
+            $rows = array_key_exists($from, $this->posterSales) ? $this->posterSales[$from] : [];
+
+            return $rows === null ? ['error' => 30, 'message' => 'Access token is invalid'] : ['response' => $rows];
+        });
+        $this->app->instance(PosterAuthController::class, $poster);
+    }
+
+    private function sale(string $category, int $revenueKopecks): array
+    {
+        return ['revenue' => (string) $revenueKopecks, 'profit' => '0', 'profit_netto' => '0', 'count' => '1', 'category_name' => $category, 'category_id' => '1'];
+    }
 
     protected function tearDown(): void
     {
@@ -121,30 +148,6 @@ class SalaryPoolTest extends TestCase
         $this->assertSame(9.0, WorkingHours::query()->where('user_id', $colleague->id)->value('hours'));
     }
 
-    public function test_cashier_enters_cash_from_front(): void
-    {
-        Carbon::setTestNow('2026-09-10 21:00:00');
-        $cashier = $this->employee('Касир', $this->role('manager', 'кассир', 1.0));
-        $cook = $this->employee('Кухар', $this->role('sushi', 'Сушист', 1.0));
-
-        $this->actingAs($cook)->withoutMiddleware(VerifyCsrfToken::class);
-        $this->getJson('/staff/cash')->assertForbidden();
-        $this->postJson('/staff/cash', ['date' => '2026-09-10', 'cash' => 1000])->assertForbidden();
-
-        $this->actingAs($cashier);
-        $this->getJson('/staff/cash')->assertOk()->assertJsonPath('days.0.date', '2026-09-10')->assertJsonCount(8, 'days');
-        $this->postJson('/staff/cash', ['date' => '2026-09-10', 'cash' => 48250.5])
-            ->assertOk()
-            ->assertJsonPath('days.0.cash', 48250.5);
-        $this->assertSame($cashier->id, SalaryDay::query()->value('entered_by'));
-
-        $this->postJson('/staff/cash', ['date' => '2026-09-11', 'cash' => 1])->assertStatus(422);
-        $this->postJson('/staff/cash', ['date' => '2026-09-02', 'cash' => 1])->assertStatus(422);
-
-        $this->postJson('/staff/cash', ['date' => '2026-09-10', 'cash' => null])->assertOk()->assertJsonPath('days.0.cash', null);
-        $this->assertSame(0, SalaryDay::query()->count());
-    }
-
     public function test_admin_page_saves_day_and_keeps_self_marks(): void
     {
         Carbon::setTestNow('2026-09-05 12:00:00');
@@ -154,20 +157,58 @@ class SalaryPoolTest extends TestCase
         $b = $this->employee('Богдан', $packer);
         WorkingHours::query()->create(['user_id' => $a->id, 'working_day' => '2026-09-05', 'hours' => 12, 'source' => 'self', 'entered_by' => $a->id]);
 
+        // каса за 5.09 приходить з Poster: 15 000 + 5 000 потрібних категорій, напої «Кава» не рахуються
+        $this->posterSales['20260905'] = [$this->sale('Роли', 1500000), $this->sale('ПРЕМІУМ Роли та Сети ', 500000), $this->sale('Кава', 99900)];
+
         $owner = $this->employee('Власник', $this->role('admin', 'Адміністратор', null));
-        $this->actingAs($owner)->get('/admin/salary')->assertOk()->assertSee('Анна')->assertSee('Богдан');
+        $this->actingAs($owner)->get('/admin/salary?month=2026-09')->assertOk()->assertSee('Анна')->assertSee('Богдан');
+        $this->assertEqualsWithDelta(20000, (float) SalaryDay::query()->whereDate('date', '2026-09-05')->value('cash'), 0.001, 'каса підтягнулась при відкритті сторінки');
+        $this->assertSame(5, SalaryDay::query()->count(), 'синхронізовано 1–5 вересня, без майбутніх днів');
 
-        $page = Livewire::test(Salary::class)->set('month', '2026-09')->mountAction('editDay', ['date' => '2026-09-05']);
+        $page = Livewire::test(Salary::class, ['month' => '2026-09'])->mountAction('editDay', ['date' => '2026-09-05']);
         $page->assertSet('mountedActions.0.data.hours.' . $a->id, 12.0, 'години працівника підставлені у форму');
-        $this->callMounted($page, ['cash' => 20000, 'hours.' . $b->id => 10]);
+        $page->assertSet('mountedActions.0.data.cash', 20000.0);
+        $this->callMounted($page, ['cash' => 1, 'hours.' . $b->id => 10]);
 
-        $this->assertEqualsWithDelta(20000, (float) SalaryDay::query()->value('cash'), 0.001);
+        $this->assertEqualsWithDelta(20000, (float) SalaryDay::query()->whereDate('date', '2026-09-05')->value('cash'), 0.001, 'касу вручну не змінити');
         $this->assertSame('self', WorkingHours::query()->where('user_id', $a->id)->value('source'), 'не змінені години лишаються «від працівника»');
         $this->assertSame('admin', WorkingHours::query()->where('user_id', $b->id)->value('source'));
 
         $report = app(SalaryPool::class)->month(CarbonImmutable::parse('2026-09-01'));
         // фонд 3000: Анна 12 × 1 = 12, Богдан 10 × 0.7 = 7
         $this->assertEqualsWithDelta(3000 * 12 / 19, collect($report['employees'])->firstWhere('name', 'Анна')['pay'], 0.01);
+    }
+
+    public function test_poster_sync_skips_closed_days_and_reports_failures(): void
+    {
+        Carbon::setTestNow('2026-09-03 10:00:00');
+        $this->posterSales['20260901'] = [$this->sale('Піца', 1000000)];
+        $this->posterSales['20260902'] = [$this->sale('сети', 250050)];
+        $sync = app(PosterCashSync::class);
+
+        $this->assertSame(['synced' => 3, 'failed' => []], $sync->syncMonth(CarbonImmutable::parse(self::DAY)));
+        $this->assertEqualsWithDelta(2500.5, (float) SalaryDay::query()->whereDate('date', '2026-09-02')->value('cash'), 0.001);
+        $this->assertEqualsWithDelta(0, (float) SalaryDay::query()->whereDate('date', '2026-09-03')->value('cash'), 0.001);
+
+        // через годину: 1.09 і 2.09 закриті (синк 3.09 о 10:00 — пізніше ніж 06:00 наступного дня), перечитується лише сьогодні
+        Carbon::setTestNow('2026-09-03 11:00:00');
+        $this->posterCalls = 0;
+        $this->assertSame(1, $sync->syncMonth(CarbonImmutable::parse(self::DAY))['synced']);
+        $this->assertSame(1, $this->posterCalls);
+
+        // о 05:00 4.09 вчорашній день (3.09) ще не закритий — зміна могла закритись після півночі
+        Carbon::setTestNow('2026-09-04 05:00:00');
+        $this->posterCalls = 0;
+        $sync->syncMonth(CarbonImmutable::parse(self::DAY));
+        $this->assertSame(2, $this->posterCalls, '3.09 і 4.09');
+
+        // --force перечитує все; помилка Poster не стирає збережену касу
+        $this->posterSales['20260901'] = null;
+        $result = $sync->syncMonth(CarbonImmutable::parse(self::DAY), true);
+        $this->assertSame(['2026-09-01'], $result['failed']);
+        $this->assertEqualsWithDelta(10000, (float) SalaryDay::query()->whereDate('date', '2026-09-01')->value('cash'), 0.001);
+
+        $this->artisan('salary:sync-cash', ['--month' => '2026-09'])->assertExitCode(0);
     }
 
     public function test_settings_and_access(): void

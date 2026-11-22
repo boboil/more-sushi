@@ -96,7 +96,7 @@
             </thead>
             <tbody>
                 <tr class="sal-meta">
-                    <td class="name">Каса, ₴</td>
+                    <td class="name">Каса (Poster), ₴</td>
                     @foreach ($days as $date => $day)
                         <td class="day" wire:click="{{ $openDay($date) }}">{{ $day['cash'] !== null ? $money($day['cash']) : '' }}</td>
                     @endforeach
@@ -148,7 +148,7 @@
     </div>
 
     <p class="sal-note">
-        Натисніть на день, щоб внести касу і години. <span style="color: rgb(217 119 6); font-weight: 600;">Помаранчеві</span> години працівник вніс сам.
+        Каса — виторг з Poster по категоріях продукції, оновлюється сама при відкритті сторінки. Натисніть на день, щоб внести години. <span style="color: rgb(217 119 6); font-weight: 600;">Помаранчеві</span> години працівник вніс сам.
         Фонд дня = каса × відсоток; він ділиться між тими, хто працював, пропорційно «години × коефіцієнт».
     </p>
 </x-filament-panels::page>

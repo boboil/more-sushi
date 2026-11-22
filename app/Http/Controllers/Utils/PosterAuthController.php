@@ -182,6 +182,29 @@ class PosterAuthController extends Controller
     }
 
 
+    /**
+     * Фінансовий звіт Poster (finance.getReport): періоди, категорії і суми в копійках.
+     */
+    public function getFinanceReport(string $dateFrom = '20261122', string $dateTo = '20261122')
+    {
+        $url = $this->baseUrl . 'dash.getCategoriesSales?' . http_build_query([
+            'token' => $this->token,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
+        ]);
+
+        return $this->sendRequest($url);
+    }
+
+    /** Локальна перевірка: /poster-finance-report?dateFrom=2024-10-01&dateTo=2024-11-01 */
+    public function dumpFinanceReport(Request $request)
+    {
+        dd($this->getFinanceReport(
+            $request->query('dateFrom', '20261122'),
+            $request->query('dateTo', '20261122'),
+        ));
+    }
+
     public function getOrders()
     {
         $today = Carbon::today()->format('Ymd');

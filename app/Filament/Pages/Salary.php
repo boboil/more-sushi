@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\Role;
 use App\Models\WorkingHours;
+use App\Services\Salary\PosterCashSync;
 use App\Services\Salary\SalaryPool;
 use BackedEnum;
 use Carbon\CarbonImmutable;
@@ -54,6 +55,22 @@ class Salary extends Page
         if (! in_array($this->mode, ['hours', 'money'], true)) {
             $this->mode = 'hours';
         }
+        $this->syncCash(false);
+    }
+
+    /** Каса з Poster: без $force — лише відсутні й ще не закриті дні (сьогодні, вчора). */
+    public function syncCash(bool $force): void
+    {
+        $result = app(PosterCashSync::class)->syncMonth($this->monthStart(), $force);
+
+        if ($result['failed']) {
+            Notification::make()->warning()
+                ->title('Не вдалося отримати касу з Poster')
+                ->body('Дні: ' . implode(', ', array_map(fn ($d) => CarbonImmutable::parse($d)->format('d.m'), $result['failed'])))
+                ->send();
+        } elseif ($force) {
+            Notification::make()->success()->title('Касу оновлено з Poster')->body("Днів: {$result['synced']}")->send();
+        }
     }
 
     public function monthStart(): CarbonImmutable
@@ -64,6 +81,7 @@ class Salary extends Page
     public function shiftMonth(int $delta): void
     {
         $this->month = $this->monthStart()->addMonths($delta)->format('Y-m');
+        $this->syncCash(false);
     }
 
     public function setMode(string $mode): void
@@ -84,7 +102,16 @@ class Salary extends Page
 
     protected function getHeaderActions(): array
     {
-        return [$this->settingsAction()];
+        return [$this->refreshCashAction(), $this->settingsAction()];
+    }
+
+    public function refreshCashAction(): Action
+    {
+        return Action::make('refreshCash')
+            ->label('Оновити касу з Poster')
+            ->icon(Heroicon::OutlinedArrowPath)
+            ->color('gray')
+            ->action(fn () => $this->syncCash(true));
     }
 
     public function settingsAction(): Action
@@ -174,10 +201,11 @@ class Salary extends Page
 
                 return [
                     TextInput::make('cash')
-                        ->label('Каса за день')
-                        ->helperText($day['percent'] !== null ? "У фонд іде {$day['percent']}%" : 'У фонд піде ' . app(SalaryPool::class)->percent() . '%')
+                        ->label('Каса за день (з Poster)')
+                        ->helperText(($day['percent'] !== null ? "У фонд іде {$day['percent']}%. " : '') . 'Рахується автоматично з продажів Poster; оновити — кнопкою «Оновити касу з Poster».')
                         ->suffix('грн')
-                        ->numeric()->minValue(0),
+                        ->disabled()
+                        ->dehydrated(false),
                     Section::make('Години')
                         ->description('Порожньо або 0 — не працював.')
                         ->schema($fields)
@@ -190,8 +218,6 @@ class Salary extends Page
                 $adminId = auth()->id();
                 $before = collect($pool->month($date)['employees'])
                     ->mapWithKeys(fn (array $e) => [$e['id'] => $e['cells'][$date->toDateString()]['hours'] ?? null]);
-
-                $pool->setCash($date, filled($data['cash'] ?? null) ? (float) $data['cash'] : null, $adminId);
 
                 foreach ($data['hours'] ?? [] as $userId => $hours) {
                     $hours = filled($hours) ? (float) $hours : null;
