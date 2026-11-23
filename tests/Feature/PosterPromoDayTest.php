@@ -201,6 +201,27 @@ class PosterPromoDayTest extends TestCase
             ->assertJsonPath('gifts.0.productId', null);
     }
 
+    public function test_landing_rules_describe_poster_conditions_and_gifts(): void
+    {
+        $trio = $this->product('Запечене Тріо', 655, 977, self::CAT_SETS);
+        $roll = $this->product('Філадельфія', 300, 601, self::CAT_ROLLS);
+        $days = collect($this->getJson('/api/shop/promo-days')->assertOk()->json('days'))->keyBy('weekday');
+
+        // вівторок: умова на суму — купувати нічого конкретного не треба, подарунки на вибір
+        $this->assertStringStartsWith('Замовлення від 700 грн — подарунок на вибір: Запечене Тріо або Дві піци.', $days[2]['rules']['text']);
+        $this->assertSame([], $days[2]['rules']['productIds']);
+        $this->assertSame([977, 1430], array_column($days[2]['rules']['gifts'], 'posterId'));
+        // середа: 2+1 з категорії — товари з умови, подарунок з кошика
+        $this->assertStringStartsWith('Візьміть 3 позиції з «Роли» — найдешевша у подарунок.', $days[3]['rules']['text']);
+        $this->assertSame([$roll->id], $days[3]['rules']['productIds']);
+        $this->assertSame([], $days[3]['rules']['gifts']);
+        // неділя: за кожен сет — піца
+        $this->assertStringStartsWith('За кожну позицію з «Сети» — Піца Тоні Монтана у подарунок.', $days[7]['rules']['text']);
+        $this->assertSame([$trio->id], $days[7]['rules']['productIds']);
+        // без Poster — без rules
+        $this->assertNull($days[5]['rules']);
+    }
+
     public function test_days_without_poster_promotion_and_outside_hours_are_inactive(): void
     {
         $set = $this->product('Сет', 1000, 501, self::CAT_SETS);

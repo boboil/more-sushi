@@ -84,6 +84,8 @@ class PromoDayController extends Controller
             // прив'язано до Poster: товари, чия ціна в меню знижена акцією (порожньо — знижка лише в кошику);
             // null — акція без Poster, ціни як раніше за productIds
             'discountProductIds' => $day->poster_promotion_id ? ($promotion ? $promoCart->discountProductIds($promotion) : []) : null,
+            // умови й подарунки для лендингу — з акції Poster, а не з адмінки
+            'rules' => $promotion ? $promoCart->describe($day, $promotion) : null,
         ];
     }
 }

@@ -53,6 +53,54 @@ class PromoCart
     }
 
     /**
+     * Опис акції Poster для лендингу: умови словами, подарунки й товари, які треба купити.
+     *
+     * @return array{text: string, gifts: list<array>, productIds: list<int>}
+     *                                                                        productIds — товари з умови (категорія/товар); [] — умова на суму, підходить усе меню
+     */
+    public function describe(PromoDay $day, PosterPromotion $promotion): array
+    {
+        $posterProducts = $this->poster->products();
+        $conditions = collect($promotion->conditions);
+        $what = $conditions->map(fn (array $c) => match ($c['type']) {
+            PosterPromotion::CONDITION_SUM => 'замовлення від ' . $this->num($c['sum']) . ' грн',
+            PosterPromotion::CONDITION_CATEGORY => ($c['pcs'] > 1 ? "{$c['pcs']} " . $this->positions($c['pcs']) : 'кожну позицію') . ' з «' . $this->categoryName($c['id'], $posterProducts) . '»',
+            default => '«' . ($posterProducts[$c['id']]['name'] ?? 'товар акції') . '»' . ($c['pcs'] > 1 ? " × {$c['pcs']}" : ''),
+        })->implode($promotion->allConditions ? ' і ' : ' або ');
+        $hasSum = $conditions->contains(fn ($c) => $c['type'] === PosterPromotion::CONDITION_SUM);
+        $once = $promotion->repeat ? '' : ' Один подарунок на замовлення.';
+        $gifts = [];
+
+        if ($promotion->resultType === PosterPromotion::RESULT_PERCENT) {
+            $text = 'Знижка ' . $this->num($promotion->discountPercent) . "% на {$what}. "
+                . ($this->discountProductIds($promotion) ? 'Ціни в меню вже зі знижкою.' : 'Знижка з\'явиться в кошику автоматично.');
+        } elseif ($promotion->bonusCategories() !== []) {
+            $condition = $conditions->first();
+            $category = $this->categoryName($promotion->bonusCategories()[0], $posterProducts);
+            $group = $condition ? $condition['pcs'] + $promotion->bonusPcs : 0;
+            $text = ($condition && $this->bonusSharesPool($promotion, $condition)
+                ? "Візьміть {$group} " . $this->positions($group) . " з «{$category}» — найдешевша у подарунок."
+                    . ($promotion->repeat ? ' Діє на кожні ' . $group . ' ' . $this->positions($group) . ' в замовленні.' : $once)
+                : 'За ' . $what . " — позиція з «{$category}» у подарунок." . $once)
+                . ' У кошику вона буде окремим рядком по 0 грн.';
+        } else {
+            $gifts = collect($promotion->bonusProductIds())->map(fn (int $id) => $this->giftOption($day, $id, $posterProducts))->values()->all();
+            $names = collect($gifts)->pluck('name')->implode(' або ');
+            $condition = $hasSum ? mb_strtoupper(mb_substr($what, 0, 1)) . mb_substr($what, 1) : 'За ' . $what;
+            $text = $condition . ' — ' . (count($gifts) > 1 ? "подарунок на вибір: {$names}" : "{$names} у подарунок") . '.' . $once
+                . ' Подарунок з\'явиться в кошику автоматично по 0 грн' . (count($gifts) > 1 ? ', там же його можна обрати.' : '.');
+        }
+
+        return [
+            'text' => $text,
+            'gifts' => $gifts,
+            'productIds' => $hasSum ? [] : Product::query()->where('isActive', true)->whereNotNull('poster_id')->orderBy('id')->get(['id', 'poster_id'])
+                ->filter(fn (Product $p) => $conditions->contains(fn ($c) => $this->matches($c, (int) $p->poster_id, $posterProducts)))
+                ->pluck('id')->values()->all(),
+        ];
+    }
+
+    /**
      * @param  array<int, int>  $lines  товар сайту => кількість
      * @param  int|null  $gift  обраний подарунок (товар Poster), якщо варіантів кілька
      */
