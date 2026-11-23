@@ -9,7 +9,10 @@ use App\Models\Landing\Order as LOrder;
 use App\Models\Shop\Product;
 use Carbon\Carbon;
 use App\Services\Notifications\PosterOrderAlert;
+use App\Models\Shop\PromoDay;
 use App\Services\Promo\PromoDays;
+use App\Services\Promo\PromoQuote;
+use Illuminate\Support\Facades\Log;
 use App\Services\Statistics\OrderAttribution;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -32,14 +35,25 @@ class OrderController extends Controller
             'customer.isAsSoonAsPossible' => 'required|string',
             'products' => 'required|array',
             'sum' => 'required|numeric|min:0',
+            'gift' => 'nullable|integer',
         ]);
         $customer = collect($validatedData['customer']);
         $customer['phone'] = $this->formatPhoneNumber($validatedData['customer']['phone']);
         $products = collect($validatedData['products']);
+        // «Акція дня» за правилами Poster: безкоштовні позиції з кошика каса додасть сама як результат акції
+        $quote = app(PromoDays::class)->quote(
+            $products->groupBy('id')->map(fn ($l) => (int) $l->sum('quantity'))->all(),
+            $validatedData['gift'] ?? null,
+        );
+        $free = $quote?->applied ? $quote->freeItems : [];
         $posterOrderProducts = [];
         foreach ($products as $product) {
             $item = Product::find($product['id']);
-            $posterOrderProducts[] = ['product_id' => $item->poster_id, 'count' => $product['quantity']];
+            $count = $product['quantity'] - ($free[$item->id] ?? 0);
+            $free[$item->id] = max(0, ($free[$item->id] ?? 0) - $product['quantity']);
+            if ($count > 0) {
+                $posterOrderProducts[] = ['product_id' => $item->poster_id, 'count' => $count];
+            }
         }
         $service_type = $customer['delivery'] === 'курʼєр' ? 3 : 1;
         $delivery = [
@@ -56,11 +70,21 @@ class OrderController extends Controller
             ];
         }
         $comment = $this->commentToPosterOrder($customer);
-        if ($promoLine = $this->promoDayComment($products->pluck('id')->all(), $request->input('sum'))) {
+        $promoLine = $quote
+            ? $this->posterPromoComment($quote, $request->input('sum'))
+            : $this->promoDayComment($products->pluck('id')->all(), $request->input('sum'));
+        if ($promoLine) {
             $comment = rtrim($comment) . PHP_EOL . $promoLine;
         }
         $posterUtil = app(PosterAuthController::class); // через контейнер, щоб у тестах не ходити в Poster
-        $posterOrder = $posterUtil->createIncomingOrder($posterOrderProducts, $customer, $delivery, $comment);
+        $promotion = $quote?->posterPromotion() ?? [];
+        $posterOrder = $posterUtil->createIncomingOrder($posterOrderProducts, $customer, $delivery, $comment, $promotion);
+        if ($promotion && ! PosterOrderAlert::accepted($posterOrder)) {
+            // Poster не прийняв акцію — шлемо без неї: замовлення важливіше, акцію оператор бачить у коментарі
+            Log::warning('Poster відхилив замовлення з акцією, повтор без акції', ['promotion' => $promotion, 'response' => $posterOrder]);
+            $restored = $products->map(fn ($p) => ['product_id' => Product::find($p['id'])->poster_id, 'count' => $p['quantity']])->all();
+            $posterOrder = $posterUtil->createIncomingOrder($restored, $customer, $delivery, $comment . PHP_EOL . 'Акцію не застосовано автоматично — застосуйте вручну');
+        }
 
         $time = Carbon::parse($customer['time']['day'] . $customer['time']['time']);
         $sum = $request->input('sum');
@@ -127,6 +151,29 @@ class OrderController extends Controller
         }
 
         return $line . '. Сума з сайту: ' . $sum . ' грн';
+    }
+
+    /** Рядок для оператора про акцію Poster, яку сайт застосував (або чому ні). */
+    public function posterPromoComment(PromoQuote $quote, mixed $sum): string
+    {
+        $day = PromoDay::query()->where('weekday', $quote->weekday)->first();
+        $line = 'АКЦІЯ ДНЯ (' . ($day?->label() ?? $quote->weekday) . ", Poster #{$quote->posterPromotionId})";
+        if (! $quote->applied) {
+            return $line . ': умови не виконано. Сума з сайту: ' . $sum . ' грн';
+        }
+        $parts = [];
+        if ($quote->gifts) {
+            $parts[] = 'Подарунок: ' . collect($quote->gifts)->map(fn ($g) => $g['name'] . ' ×' . $g['count'])->implode(', ');
+        }
+        if ($quote->freeItems) {
+            $titles = Product::query()->whereIn('id', array_keys($quote->freeItems))->pluck('title', 'id');
+            $parts[] = 'Безкоштовно: ' . collect($quote->freeItems)->map(fn ($n, $id) => trim($titles[$id] ?? "#{$id}") . ' ×' . $n)->implode(', ');
+        }
+        if ($quote->discount) {
+            $parts[] = "Знижка {$quote->discount} грн";
+        }
+
+        return $line . ': ' . implode('. ', $parts) . '. Сума з сайту: ' . $sum . ' грн';
     }
 
     public function index()

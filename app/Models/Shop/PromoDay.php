@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * Акція одного дня тижня для лендингу /promo/<день>.
  *
  * @property int $weekday 1 = понеділок … 7 = неділя
+ * @property int|null $poster_promotion_id акція в Poster, за якою сайт рахує знижку/подарунок
+ * @property array|null $gift_display подарунок Poster => товари сайту для показу: [['poster_id' => 1430, 'products' => [87, 83]]]
  * @property bool $is_active
  * @property string $offer_type percent | gift
  * @property int|null $discount_percent
@@ -40,12 +42,14 @@ class PromoDay extends Model
     protected $table = 'promo_days';
 
     protected $fillable = [
-        'weekday', 'is_active', 'offer_type', 'discount_percent', 'offer_title', 'offer_short',
+        'weekday', 'poster_promotion_id', 'gift_display', 'is_active', 'offer_type', 'discount_percent', 'offer_title', 'offer_short',
         'gift_badge', 'active_from', 'active_to', 'terms', 'hero_image',
     ];
 
     protected $casts = [
         'weekday' => 'integer',
+        'poster_promotion_id' => 'integer',
+        'gift_display' => 'array',
         'is_active' => 'boolean',
         'discount_percent' => 'integer',
     ];
@@ -55,6 +59,18 @@ class PromoDay extends Model
         return $this->belongsToMany(Product::class, 'promo_day_product', 'promo_day_id', 'product_id')
             ->withPivot('sort_order')
             ->orderByPivot('sort_order');
+    }
+
+    /** @return list<int> товари сайту, якими показувати подарунок Poster (порожньо — не задано) */
+    public function giftDisplayProducts(int $posterId): array
+    {
+        foreach ($this->gift_display ?? [] as $row) {
+            if ((int) ($row['poster_id'] ?? 0) === $posterId) {
+                return array_values(array_map('intval', $row['products'] ?? []));
+            }
+        }
+
+        return [];
     }
 
     public function label(): string

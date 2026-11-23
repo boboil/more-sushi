@@ -6,10 +6,13 @@ use App\Filament\Resources\Shop\PromoDays\Pages\EditPromoDay;
 use App\Filament\Resources\Shop\PromoDays\Pages\ListPromoDays;
 use App\Models\Shop\PromoDay;
 use BackedEnum;
+use App\Services\Promo\PosterPromotions;
 use App\Services\Promo\PromoDays;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
+use App\Models\Shop\Product;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -50,6 +53,23 @@ class PromoDayResource extends Resource
                     ->schema([
                         Grid::make(2)->schema([
                             Toggle::make('is_active')->label('Акція діє в цей день')->default(true)->columnSpanFull(),
+                            TextInput::make('poster_promotion_id')->label('ID акції в Poster')->numeric()->integer()->minValue(1)->nullable()
+                                ->live(onBlur: true)
+                                ->helperText(fn (?int $state) => self::posterHelp($state))
+                                ->columnSpanFull(),
+                            Repeater::make('gift_display')->label('Як показати подарунок на сайті')
+                                ->helperText('Для подарунка-набору з Poster (напр. «Дві піци»): якими товарами сайту показати його в кошику. Подарунок, що є на сайті з тим самим Poster ID, знаходиться сам.')
+                                ->visible(fn (Get $get) => filled($get('poster_promotion_id')))
+                                ->schema([
+                                    Select::make('poster_id')->label('Подарунок у Poster')->required()
+                                        ->options(fn (Get $get) => self::giftOptions((int) $get('../../poster_promotion_id'))),
+                                    // можна й приховану картку («Відображати на сайті» вимкнено) — лише для показу подарунка
+                                    Select::make('products')->label('Товари сайту')->required()->multiple()->searchable()
+                                        ->options(fn () => Product::query()->orderByDesc('isActive')->orderBy('title')->get(['id', 'title', 'isActive'])
+                                            ->mapWithKeys(fn (Product $p) => [$p->id => trim($p->title) . ($p->isActive ? '' : ' (прихований)')])->all()),
+                                ])
+                                ->columns(2)->defaultItems(0)->addActionLabel('Додати подарунок')
+                                ->columnSpanFull(),
                             Select::make('offer_type')->label('Механіка')->required()->live()
                                 ->options([PromoDay::TYPE_PERCENT => 'Знижка у відсотках', PromoDay::TYPE_GIFT => 'Подарунок / спецпропозиція']),
                             TextInput::make('discount_percent')->label('Знижка, %')->numeric()->minValue(1)->maxValue(90)
@@ -89,6 +109,7 @@ class PromoDayResource extends Resource
             ->columns([
                 TextColumn::make('weekday')->label('День')->formatStateUsing(fn (int $state) => PromoDay::DAYS[$state]['label'] ?? $state),
                 TextColumn::make('offer_short')->label('Оффер'),
+                TextColumn::make('poster_promotion_id')->label('Poster')->placeholder('—')->prefix('#'),
                 TextColumn::make('hours')->label('Години')->state(fn (PromoDay $record) => "{$record->active_from}–{$record->active_to}"),
                 TextColumn::make('products_count')->label('Товарів')->counts('products'),
                 ToggleColumn::make('is_active')->label('Діє'),
@@ -103,6 +124,37 @@ class PromoDayResource extends Resource
                 EditAction::make(),
             ])
             ->toolbarActions([]);
+    }
+
+    /** @return array<int, string> подарункові товари акції Poster: id => назва */
+    private static function giftOptions(int $promotionId): array
+    {
+        $promotion = $promotionId ? app(PosterPromotions::class)->find($promotionId) : null;
+        if (! $promotion) {
+            return [];
+        }
+        $products = app(PosterPromotions::class)->products();
+
+        return collect($promotion->bonusProductIds())
+            ->mapWithKeys(fn (int $id) => [$id => '#' . $id . ' ' . ($products[$id]['name'] ?? '')])->all();
+    }
+
+    /** Підказка під полем: що це за акція в Poster і чи сайт уміє її порахувати. */
+    private static function posterHelp(?int $id): string
+    {
+        if (! $id) {
+            return 'Без акції Poster знижку й подарунок оператор застосовує вручну (за коментарем у замовленні).';
+        }
+        $promotion = app(PosterPromotions::class)->find($id);
+        if (! $promotion) {
+            return "Акцію #{$id} у Poster не знайдено.";
+        }
+        $status = $promotion->supported()
+            ? 'сайт рахує знижку/подарунок за її умовами й передає акцію в замовлення Poster'
+            : 'цю механіку сайт не рахує — оператор застосує вручну';
+        $until = $promotion->dateEnd ? ', до ' . $promotion->dateEnd->format('d.m.Y') : '';
+
+        return "«{$promotion->name}»{$until}: {$status}. Години дії — з полів нижче.";
     }
 
     public static function canCreate(): bool

@@ -53,6 +53,8 @@ Route::prefix('shop')->group(function () {
     Route::get('tags', [TagController::class, 'index']);
     Route::get('stock', [CategoryController::class, 'stock']);
     Route::get('promo-days', [\App\Http\Controllers\Shop\PromoDayController::class, 'index']);
+    Route::post('promo-quote', [\App\Http\Controllers\Shop\PromoDayController::class, 'quote'])
+        ->withoutMiddleware('throttle:api')->middleware('throttle:promo-quote');
     Route::get('related-products', [ProductController::class, 'getRelatedProducts']);
     Route::post('add-order', [OrderController::class, 'addOrder']);
     Route::post('add-question', [QuestionController::class, 'addQuestion']);

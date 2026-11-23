@@ -64,6 +64,19 @@ class PromoDays
         return $day && $this->withinHours($day, $now) ? $day : null;
     }
 
+    /**
+     * «Акція дня» за правилами Poster для кошика, якщо зараз діє прив'язана акція; інакше null.
+     *
+     * @param  array<int, int>  $lines  товар сайту => кількість
+     */
+    public function quote(array $lines, ?int $gift = null, ?CarbonInterface $now = null): ?PromoQuote
+    {
+        $day = $this->current($now);
+        $promotion = $day ? app(PromoCart::class)->promotionFor($day, $now) : null;
+
+        return $promotion ? app(PromoCart::class)->quote($day, $promotion, $lines, $gift) : null;
+    }
+
     public function withinHours(PromoDay $day, CarbonInterface $now): bool
     {
         $time = $now->format('H:i');

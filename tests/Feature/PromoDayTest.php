@@ -23,6 +23,13 @@ class PromoDayTest extends TestCase
     // четвер, 14:00 за Києвом
     private const THURSDAY = '2026-11-12 14:00:00';
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // тут — акції дня без Poster; з Poster — PosterPromoDayTest
+        PromoDay::query()->update(['poster_promotion_id' => null]);
+    }
+
     protected function tearDown(): void
     {
         Carbon::setTestNow();

@@ -46,7 +46,18 @@ class RouteServiceProvider extends ServiceProvider
     protected function configureRateLimiting()
     {
         RateLimiter::for('api', function (Request $request) {
+            // локальна пісочниця: Nuxt у dev-режимі не кешує меню й б'є в API на кожну сторінку
+            // (не APP_ENV — на проді він теж «local»)
+            if (config('services.poster.fake_orders')) {
+                return Limit::none();
+            }
+
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // «Акція дня» в кошику: запити йдуть із сервера Nuxt (одна IP на всіх покупців), тож окремий, ширший ліміт
+        RateLimiter::for('promo-quote', function (Request $request) {
+            return config('services.poster.fake_orders') ? Limit::none() : Limit::perMinute(600)->by($request->ip());
         });
     }
 }

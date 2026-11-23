@@ -144,7 +144,10 @@ class PosterAuthController extends Controller
         return (int)$price / 100;
     }
 
-    public function createIncomingOrder($products, $customer, $delivery, $comment)
+    /**
+     * @param  array  $promotion  акції для автозастосування на касі: [['id', 'involved_products', 'result_products']]
+     */
+    public function createIncomingOrder($products, $customer, $delivery, $comment, array $promotion = [])
     {
         $url = 'https://joinposter.com/api/incomingOrders.createIncomingOrder'
             . '?token=' . $this->token;
@@ -157,7 +160,26 @@ class PosterAuthController extends Controller
             'products' => $products,
             'comment' => $comment
         ];
+        if ($promotion) {
+            $incoming_order['promotion'] = $promotion;
+        }
+        if (config('services.poster.fake_orders')) {
+            return $this->fakeIncomingOrder($incoming_order);
+        }
         return $this->sendRequest($url, $incoming_order, 'post');
+    }
+
+    /** Локальне тестування (POSTER_FAKE_ORDERS): замість Poster — рядок у лог, відповідь «прийнято». */
+    private function fakeIncomingOrder(array $incomingOrder): array
+    {
+        $id = 'local-' . now()->format('YmdHis');
+        file_put_contents(
+            storage_path('logs/poster-fake-orders.log'),
+            json_encode(['id' => $id, 'at' => now()->toDateTimeString(), 'order' => $incomingOrder], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . PHP_EOL,
+            FILE_APPEND,
+        );
+
+        return ['response' => ['incoming_order_id' => $id, 'fake' => true]];
     }
 
     function sendRequest($url, $data = [], $method = 'get')
@@ -210,6 +232,34 @@ class PosterAuthController extends Controller
         $today = Carbon::today()->format('Ymd');
         $url = 'https://joinposter.com/api/dash.getTransactions'
             . '?token=' . $this->token.'&status=1&dateFrom='.$today.'&date_to='.$today.'&include_products=true';
+        return $this->sendRequest($url);
+    }
+
+    public function getAction(string $dateFrom = '20261122', string $dateTo = '20261122')
+    {
+        $url = $this->baseUrl . 'clients.getPromotions?' . http_build_query([
+                'token' => $this->token,
+            ]);
+
+        return response()->json($this->sendRequest($url), 200, [], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    }
+
+    /** Одна акція Poster (clients.getPromotion); response — об'єкт акції або null */
+    public function getPromotion(int $promotionId)
+    {
+        $url = $this->baseUrl . 'clients.getPromotion?' . http_build_query([
+            'token' => $this->token,
+            'promotion_id' => $promotionId,
+        ]);
+
+        return $this->sendRequest($url);
+    }
+
+    /** Усі товари Poster (menu.getProducts): потрібні категорії й ціни для умов акцій */
+    public function getMenuProducts()
+    {
+        $url = $this->baseUrl . 'menu.getProducts?' . http_build_query(['token' => $this->token]);
+
         return $this->sendRequest($url);
     }
 

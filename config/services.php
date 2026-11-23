@@ -54,6 +54,11 @@ return [
         'url' => env('FRONT_URL', 'https://moresushi.in.ua'),
     ],
 
+    // Локально: замовлення не йдуть у Poster, а пишуться в storage/logs/poster-fake-orders.log
+    'poster' => [
+        'fake_orders' => (bool) env('POSTER_FAKE_ORDERS', false),
+    ],
+
     'telegram' => [
         'bot_token' => env('TELEGRAM_BOT_TOKEN'),
         'alert_chat_id' => env('TELEGRAM_ALERT_CHAT_ID'),
