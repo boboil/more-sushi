@@ -148,6 +148,46 @@ class SalaryPoolTest extends TestCase
         $this->assertSame(9.0, WorkingHours::query()->where('user_id', $colleague->id)->value('hours'));
     }
 
+    public function test_cashier_enters_hours_for_other_staff(): void
+    {
+        Carbon::setTestNow('2026-12-10 20:00:00');
+        $cashier = $this->employee('Касир', $this->role('manager', 'кассир', 1.0));
+        $sushi = $this->role('sushi', 'Сушист', 1.0);
+        $worker = $this->employee('Працівник', $sushi);
+        $other = $this->employee('Інший', $sushi);
+        $pool = app(SalaryPool::class);
+        $pool->setHours($worker->id, CarbonImmutable::parse('2026-12-08'), 10, WorkingHours::SOURCE_ADMIN, null);
+        $pool->setHours($worker->id, CarbonImmutable::parse('2026-12-10'), 6, WorkingHours::SOURCE_ADMIN, null);
+
+        // працівник не бачить списку і не може вносити іншим
+        $this->actingAs($other)->withoutMiddleware(VerifyCsrfToken::class);
+        $this->getJson('/staff/hours')->assertOk()->assertJsonPath('staff', null);
+        $this->getJson('/staff/hours?user_id=' . $worker->id)->assertForbidden();
+        $this->postJson('/staff/hours', ['date' => '2026-12-10', 'hours' => 5, 'user_id' => $worker->id])->assertForbidden();
+
+        $this->actingAs($cashier);
+        $staff = $this->getJson('/staff/hours')->assertOk()->json('staff');
+        $this->assertEqualsCanonicalizing(['Касир', 'Працівник', 'Інший'], array_column($staff, 'name'));
+
+        $this->getJson('/staff/hours?month=2026-12&user_id=' . $worker->id)->assertOk()
+            ->assertJsonPath('name', 'Працівник')->assertJsonPath('asCashier', true)
+            ->assertJsonPath('days.7.editable', false)   // 8.12 від адміністратора
+            ->assertJsonPath('days.9.editable', true);   // сьогодні — можна
+
+        // проставити порожній минулий день, змінити сьогоднішні години адміністратора
+        $this->postJson('/staff/hours', ['date' => '2026-12-09', 'hours' => 11, 'user_id' => $worker->id])->assertOk()->assertJsonPath('days.8.source', 'cashier');
+        $this->postJson('/staff/hours', ['date' => '2026-12-10', 'hours' => 12, 'user_id' => $worker->id])->assertOk()->assertJsonPath('days.9.hours', 12);
+        $this->postJson('/staff/hours', ['date' => '2026-12-08', 'hours' => 12, 'user_id' => $worker->id])->assertStatus(422);
+        $this->postJson('/staff/hours', ['date' => '2026-12-11', 'hours' => 8, 'user_id' => $worker->id])->assertStatus(422);
+        $this->postJson('/staff/hours', ['date' => '2026-12-02', 'hours' => 8, 'user_id' => $worker->id])->assertStatus(422);
+        $this->assertSame($cashier->id, WorkingHours::query()->where('user_id', $worker->id)->whereDate('working_day', '2026-12-09')->value('entered_by'));
+
+        // години від касира працівник сам не переписує
+        $this->actingAs($worker);
+        $this->postJson('/staff/hours', ['date' => '2026-12-09', 'hours' => 4])->assertStatus(422)->assertJsonPath('message', 'Години за цей день уже вніс касир — зверніться до нього, щоб змінити.');
+        $this->getJson('/staff/hours?month=2026-12')->assertOk()->assertJsonPath('totalHours', 33);
+    }
+
     public function test_first_month_backfill_window(): void
     {
         $me = $this->employee('Я', $this->role('sushi', 'Сушист', 1.0));

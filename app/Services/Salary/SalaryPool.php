@@ -95,6 +95,24 @@ class SalaryPool
         return $existing === null || $existing->source === WorkingHours::SOURCE_SELF;
     }
 
+    /**
+     * Чи може касир змінити години іншого працівника за цей день.
+     * Ті ж дні, що й працівнику; за сьогодні — будь-які години, навіть від адміністратора.
+     */
+    public function canCashierEdit(CarbonInterface $date, ?WorkingHours $existing): bool
+    {
+        $today = CarbonImmutable::today();
+        $day = CarbonImmutable::parse($date->toDateString());
+
+        if ($day->greaterThan($today) || $day->lessThan($this->selfEditFrom())) {
+            return false;
+        }
+
+        return $day->equalTo($today)
+            || $existing === null
+            || in_array($existing->source, [WorkingHours::SOURCE_SELF, WorkingHours::SOURCE_CASHIER], true);
+    }
+
     /** Найраніша дата, за яку працівник ще може сам внести години. */
     public function selfEditFrom(): CarbonImmutable
     {

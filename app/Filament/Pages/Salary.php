@@ -188,6 +188,7 @@ class Salary extends Page
                     $source = $employee['cells'][$date]['source'] ?? null;
                     $hint = match ($source) {
                         WorkingHours::SOURCE_SELF => 'внесено працівником',
+                        WorkingHours::SOURCE_CASHIER => 'вніс касир',
                         WorkingHours::SOURCE_POSTER => 'з Poster',
                         default => null,
                     };

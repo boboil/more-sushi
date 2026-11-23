@@ -5,6 +5,13 @@
         </div>
 
         <template v-else>
+            <div v-if="data && data.staff" class="mh-staff">
+                <label for="mh-user" class="form-label mb-1">Працівник</label>
+                <select id="mh-user" v-model.number="userId" class="form-select form-control" @change="load">
+                    <option v-for="u in data.staff" :key="u.id" :value="u.id">{{ u.name }}</option>
+                </select>
+            </div>
+
             <div class="mh-head">
                 <button type="button" class="btn btn-outline-secondary btn-sm" @click="shift(-1)" aria-label="Попередній місяць">‹</button>
                 <h4 class="mb-0">{{ monthLabel }}</h4>
@@ -25,7 +32,7 @@
                     :key="day.date"
                     type="button"
                     class="mh-day"
-                    :class="{ today: day.date === data.today, filled: day.hours, admin: day.hours && day.source !== 'self', locked: !day.editable }"
+                    :class="{ today: day.date === data.today, filled: day.hours, admin: day.hours && (data.asCashier ? day.source === 'admin' || day.source === 'poster' : day.source !== 'self'), locked: !day.editable }"
                     :disabled="!day.editable"
                     @click="open(day)"
                 >
@@ -34,15 +41,20 @@
                 </button>
             </div>
 
-            <p class="mh-note">
-                Можна вносити години за сьогодні і за попередні дні, починаючи з {{ data && data.editFrom ? dateLabel(data.editFrom) : 'останніх 7 днів' }}.
-                <span class="mh-legend admin"></span> — години вніс адміністратор, змінити їх може лише він.
+            <p class="mh-note" v-if="data">
+                Можна вносити години за сьогодні і за попередні дні, починаючи з {{ dateLabel(data.editFrom) }}.
+                <template v-if="data.asCashier">
+                    <span class="mh-legend admin"></span> — години вніс адміністратор: за минулі дні змінює лише він, за сьогодні можна змінити.
+                </template>
+                <template v-else>
+                    <span class="mh-legend admin"></span> — години вніс касир або адміністратор, змінити їх можуть лише вони.
+                </template>
             </p>
 
             <b-modal
                 id="mh-edit"
                 v-model="modalOpen"
-                :title="editing ? 'Години за ' + dateLabel(editing.date) : ''"
+                :title="editing ? (data.asCashier ? data.name + ' · ' : '') + 'Години за ' + dateLabel(editing.date) : ''"
                 ok-title="Зберегти"
                 cancel-title="Скасувати"
                 :ok-disabled="saving"
@@ -82,6 +94,7 @@ export default {
             isLoggedIn: !!(window.Laravel && window.Laravel.isLoggedin),
             month: now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0'),
             data: null,
+            userId: null,
             error: null,
             weekdays: ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'нд'],
             modalOpen: false,
@@ -112,8 +125,10 @@ export default {
         },
         load() {
             this.error = null
-            return this.$axios.get('/staff/hours', { params: { month: this.month }, headers: this.headers() })
-                .then(r => { this.data = r.data })
+            const params = { month: this.month }
+            if (this.userId) params.user_id = this.userId
+            return this.$axios.get('/staff/hours', { params, headers: this.headers() })
+                .then(r => { this.data = r.data; this.userId = r.data.userId })
                 .catch(e => { this.error = this.message(e) })
         },
         shift(delta) {
@@ -132,7 +147,7 @@ export default {
         submit(hours) {
             this.saving = true
             this.error = null
-            return this.$axios.post('/staff/hours', { date: this.editing.date, hours }, { headers: this.headers() })
+            return this.$axios.post('/staff/hours', { date: this.editing.date, hours, user_id: this.userId }, { headers: this.headers() })
                 .then(r => {
                     this.data = r.data
                     this.modalOpen = false
@@ -172,6 +187,7 @@ export default {
 
 <style scoped>
 .my-hours { max-width: 560px; }
+.mh-staff { margin-bottom: .75rem; }
 .mh-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .5rem; }
 .mh-total { color: #555; }
 .mh-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }

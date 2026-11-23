@@ -124,7 +124,7 @@
                                     'self' => $cell && $cell['source'] === \App\Models\WorkingHours::SOURCE_SELF,
                                     'warn' => $cell && $employee['noCoefficient'],
                                 ])
-                                @if ($cell) title="{{ $num($cell['hours']) }} год · {{ $money($cell['pay']) }} ₴{{ $cell['source'] === 'self' ? ' · внесено працівником' : '' }}" @endif
+                                @if ($cell) title="{{ $num($cell['hours']) }} год · {{ $money($cell['pay']) }} ₴{{ match ($cell['source']) { 'self' => ' · внесено працівником', 'cashier' => ' · вніс касир', default => '' } }}" @endif
                             >
                                 @if ($cell)
                                     {{ $mode === 'money' ? $money($cell['pay']) : $num($cell['hours']) }}

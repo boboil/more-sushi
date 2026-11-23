@@ -82,6 +82,12 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasRole('manager');
     }
+
+    /** Касир (і super admin) вносить години іншим працівникам у «Мої години». */
+    public function canManageStaffHours(): bool
+    {
+        return $this->isSuperAdmin() || $this->isManager();
+    }
     public function setPasswordAttribute($password): void
     {
         $this->attributes['password'] = bcrypt($password);
