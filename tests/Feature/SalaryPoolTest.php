@@ -148,6 +148,33 @@ class SalaryPoolTest extends TestCase
         $this->assertSame(9.0, WorkingHours::query()->where('user_id', $colleague->id)->value('hours'));
     }
 
+    public function test_employee_sees_only_own_pay(): void
+    {
+        Carbon::setTestNow('2026-12-10 20:00:00');
+        $sushi = $this->role('sushi', 'Сушист', 1.0);
+        $me = $this->employee('Я', $sushi);
+        $colleague = $this->employee('Колега', $sushi);
+        $cashier = $this->employee('Касир', $this->role('manager', 'кассир', 1.0));
+        $pool = app(SalaryPool::class);
+        $day = CarbonImmutable::parse('2026-12-09');
+        $pool->setCash($day, 10000, null);               // фонд 1500
+        $pool->setHours($me->id, $day, 10, WorkingHours::SOURCE_SELF, $me->id);
+        $pool->setHours($colleague->id, $day, 5, WorkingHours::SOURCE_SELF, $colleague->id);
+
+        $this->actingAs($me)->withoutMiddleware(VerifyCsrfToken::class);
+        $response = $this->getJson('/staff/hours?month=2026-12')->assertOk()
+            ->assertJsonPath('pay.total', 1000)
+            ->assertJsonPath('pay.perHour', 100)
+            ->assertJsonPath('days.8.pay', 1000)
+            ->assertJsonPath('days.7.pay', null);
+        $this->assertStringNotContainsString('500', $response->getContent(), 'суми колеги не видно');
+
+        // касир, дивлячись чужий календар, грошей не бачить; свої — бачить
+        $this->actingAs($cashier);
+        $this->getJson('/staff/hours?month=2026-12&user_id=' . $me->id)->assertOk()->assertJsonPath('pay', null)->assertJsonPath('days.8.pay', null);
+        $this->getJson('/staff/hours?month=2026-12')->assertOk()->assertJsonPath('pay.total', 0);
+    }
+
     public function test_cashier_enters_hours_for_other_staff(): void
     {
         Carbon::setTestNow('2026-12-10 20:00:00');

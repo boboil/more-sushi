@@ -37,6 +37,9 @@ class StaffHoursController extends Controller
             ->get()
             ->keyBy(fn (WorkingHours $h) => $h->working_day->toDateString());
 
+        // своя зарплата — лише власнику, касир чужих грошей не бачить
+        $pay = $asCashier ? null : $this->ownPay($target, $start);
+
         $days = [];
         for ($date = $start; $date->lessThanOrEqualTo($end); $date = $date->addDay()) {
             $record = $records->get($date->toDateString());
@@ -46,6 +49,7 @@ class StaffHoursController extends Controller
                 'weekday' => $date->dayOfWeekIso,
                 'hours' => $record?->hours,
                 'source' => $record?->source,
+                'pay' => $pay ? ($pay['cells'][$date->toDateString()]['pay'] ?? null) : null,
                 'editable' => $asCashier ? $this->pool->canCashierEdit($date, $record) : $this->pool->canSelfEdit($date, $record),
             ];
         }
@@ -59,6 +63,7 @@ class StaffHoursController extends Controller
             'editFrom' => $this->pool->selfEditFrom()->toDateString(),
             'asCashier' => $asCashier,
             'totalHours' => round($records->sum('hours'), 2),
+            'pay' => $pay ? ['total' => $pay['pay'], 'perHour' => $pay['perHour']] : null,
             'days' => $days,
             // список працівників — лише касиру
             'staff' => $viewer->canManageStaffHours()
@@ -97,6 +102,19 @@ class StaffHoursController extends Controller
         $this->pool->setHours($target->id, $date, $hours, $asCashier ? WorkingHours::SOURCE_CASHIER : WorkingHours::SOURCE_SELF, $viewer->id);
 
         return $this->index($request->merge(['month' => $date->format('Y-m'), 'user_id' => $target->id]));
+    }
+
+    /**
+     * Зарплата працівника за місяць з повного розрахунку (частка залежить від годин колег,
+     * але назовні віддаємо лише власні суми).
+     *
+     * @return array{cells: array<string, array{pay: float}>, pay: float, perHour: float}|null
+     */
+    private function ownPay(User $user, CarbonImmutable $month): ?array
+    {
+        $employee = collect($this->pool->month($month)['employees'])->firstWhere('id', $user->id);
+
+        return $employee ? ['cells' => $employee['cells'], 'pay' => $employee['pay'], 'perHour' => $employee['perHour']] : null;
     }
 
     /** Чиї години: свої або (лише касиру) обраного працівника. */

@@ -22,6 +22,17 @@
                 {{ data ? data.name : '' }} · за місяць: <b>{{ format(data ? data.totalHours : 0) }} год</b>
             </p>
 
+            <div v-if="data && data.pay" class="mh-pay">
+                <div>
+                    <small>Зарплата за місяць</small>
+                    <b>{{ money(data.pay.total) }} ₴</b>
+                </div>
+                <div v-if="data.pay.perHour">
+                    <small>У середньому за годину</small>
+                    <b>{{ money(data.pay.perHour) }} ₴</b>
+                </div>
+            </div>
+
             <div v-if="error" class="alert alert-danger">{{ error }}</div>
 
             <div class="mh-grid" v-if="data">
@@ -38,11 +49,15 @@
                 >
                     <span class="mh-num">{{ day.day }}</span>
                     <span class="mh-hours">{{ day.hours ? format(day.hours) : '' }}</span>
+                    <span v-if="day.pay" class="mh-money">{{ money(day.pay) }} ₴</span>
                 </button>
             </div>
 
             <p class="mh-note" v-if="data">
                 Можна вносити години за сьогодні і за попередні дні, починаючи з {{ dateLabel(data.editFrom) }}.
+                <template v-if="data.pay">
+                    Зарплата дня = частка фонду (каса × відсоток) за вашими годинами і посадою; поки колеги вносять години і за сьогодні триває каса — сума може змінюватись.
+                </template>
                 <template v-if="data.asCashier">
                     <span class="mh-legend admin"></span> — години вніс адміністратор: за минулі дні змінює лише він, за сьогодні можна змінити.
                 </template>
@@ -177,6 +192,9 @@ export default {
         format(v) {
             return Number(v || 0).toLocaleString('uk-UA', { maximumFractionDigits: 2 })
         },
+        money(v) {
+            return Number(v || 0).toLocaleString('uk-UA', { maximumFractionDigits: 0 })
+        },
         dateLabel(date) {
             const [, m, d] = date.split('-').map(Number)
             return d + ' ' + MONTHS_GEN[m - 1]
@@ -202,6 +220,11 @@ export default {
 .mh-day.admin { background: #e8f1ff; }
 .mh-day.locked:not(.filled) { opacity: .45; }
 .mh-day.locked { cursor: default; color: inherit; }
+.mh-pay { display: flex; gap: .75rem; margin-bottom: .75rem; }
+.mh-pay > div { flex: 1; border: 1px solid #dee2e6; border-radius: 8px; padding: .5rem .75rem; background: #fff; }
+.mh-pay small { display: block; color: #777; font-size: .75rem; }
+.mh-pay b { font-size: 1.25rem; }
+.mh-money { font-size: .6875rem; color: #2f855a; line-height: 1.1; }
 .mh-num { font-size: .75rem; color: #666; }
 .mh-hours { font-weight: 700; font-size: 1rem; min-height: 1.25rem; }
 .mh-note { font-size: .8125rem; color: #777; margin-top: .75rem; }
